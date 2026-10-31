@@ -24,6 +24,15 @@ a requirement:
 The open choices kept Claude's defaults: Dart, at most 10 findings, and a
 story model on the server may get swapped out during this sprint.
 
+After the PR was opened, Alex turned on the app's Auto-fix, which wakes
+Claude on CI failures and new review comments. He set this condition:
+
+> turn on auto fix but the final decision is mine, I need to see the issues
+> discussed
+
+CLAUDE.md now spells out what that means. Claude discusses each finding in
+its thread and changes code only after Alex decides.
+
 ## Context
 
 - Claude Code writes the code. A second model, of a different family, reviews
