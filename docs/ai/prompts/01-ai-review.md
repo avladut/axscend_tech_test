@@ -1,10 +1,9 @@
 # Task 01: AI review bot
 
-- **Status:** approved by Alex on 2026-10-31, with one added requirement (see
-  "Alex's prompts"). Claude changed "The review on GitHub" to meet it.
+- **Status:** approved by Alex on 2026-10-31. He added requirements and
+  corrections afterwards (see "Alex's prompts"), and Claude updated the task
+  to match each one.
 - **Branch:** `task/01-ai-review`
-- **Timebox:** 2 hours. If the bot isn't posting comments by then, merge what
-  works (CI stays green) and move on to the app.
 
 ## Alex's prompts (verbatim)
 
@@ -21,8 +20,9 @@ a requirement:
 > will inspect the MR reviews personally before approving them, any comment
 > needs to have a human reviewer accepting it or asking for changes (me)
 
-The open choices kept Claude's defaults: Dart, at most 10 findings, and a
-story model on the server may get swapped out during this sprint.
+Alex didn't comment on the draft's open choices, so Claude went with its own
+defaults: Dart, at most 10 findings, and accepting that a review may swap out
+a story model on the server. They are Alex's to change.
 
 After the PR was opened, Alex turned on the app's Auto-fix, which wakes
 Claude on CI failures and new review comments. He set this condition:
@@ -41,6 +41,28 @@ The repo now allows only "Squash and merge". The PR title becomes the commit
 title, and the commit messages, `Co-Authored-By` lines included, become its
 body. The PR itself keeps the step-by-step commits, such as draft → approved
 prompt.
+
+Alex then corrected the draft. He quoted a line Claude had written into it
+and replied:
+
+> > - **Timebox:** 2 hours. If the bot isn't posting comments by then, merge
+> >   what works (CI stays green) and move on to the app.
+>
+> I never asked or agreed to this rule. I decide the commits. If the review
+> bot  has no comments, it should mention it
+
+and added:
+
+> mention my change in the logs
+
+The timebox came from Claude's own planning notes, not from Alex, and should
+never have read like an agreed rule. What changed:
+
+- The timebox is removed. Alex decides what gets committed and merged.
+- The sentence about the open choices (above) now says plainly that Alex
+  didn't choose them.
+- The bot is never silent. Every run leaves a visible note on the PR, even
+  when it has nothing to comment on (see "The review on GitHub").
 
 ## Context
 
@@ -105,6 +127,12 @@ is a separate conversation that Alex accepts or rejects.
     last reviewed one, so earlier findings aren't repeated. After a force-push
     or rebase, it falls back to the full PR.
   - The body ends with a line saying the bot is advisory and Alex decides.
+  - **It is never silent** (Alex's correction). Every run posts one of these:
+    - "no findings";
+    - "nothing to review" (only files it skips changed);
+    - "already reviewed";
+    - "unavailable";
+    - "not configured".
 - **Local mode:** `--print` writes the review to the terminal instead of
   GitHub, so Alex can run it on his Mac before pushing.
 
@@ -180,6 +208,7 @@ Unit tests with fakes, plus `MockClient` from `package:http` for the client:
 - With the server unreachable, the job ends green with an "unavailable"
   review.
 - `--print` works on Alex's Mac.
+- Every run leaves a note on the PR, even when there's nothing to comment on.
 - The README says how the review works and that Alex decides.
 
 ## Agent plan
