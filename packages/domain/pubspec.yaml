@@ -1,0 +1,9 @@
+name: domain
+description: Models, repository contracts, failures and sort/filter rules. Pure Dart.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace

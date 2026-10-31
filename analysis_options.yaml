@@ -1,0 +1,15 @@
+# Shared by every package in the workspace.
+# Alex's Flutter standards: very_good_analysis with two house exceptions.
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/build/**"
+
+linter:
+  rules:
+    # Apps aren't published libraries; documenting every public member is noise.
+    public_member_api_docs: false
+    # House pattern: each journey has an XInjector class with a static init().
+    avoid_classes_with_only_static_members: false

@@ -1,0 +1,28 @@
+name: axscend_tech_test
+description: Browse JSONPlaceholder users and their posts, albums and todos.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+dependencies:
+  app_ui:
+    path: ../../packages/app_ui
+  cupertino_icons: ^1.0.8
+  domain:
+    path: ../../packages/domain
+  flutter:
+    sdk: flutter
+  # Only lib/injector.dart may import this package (see docs/adr/0001).
+  jsonplaceholder_data:
+    path: ../../packages/jsonplaceholder_data
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

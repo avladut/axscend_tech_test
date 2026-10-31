@@ -1,0 +1,31 @@
+# OS and editors
+.DS_Store
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# Dart and Flutter
+.dart_tool/
+build/
+coverage/
+.flutter-plugins-dependencies
+.pub-cache/
+**/doc/api/
+pubspec_overrides.yaml
+# pubspec.lock stays committed: one lock for the whole workspace.
+
+# Secrets and local config. Never commit these; config/example.json is the
+# committed template for --dart-define-from-file.
+.env
+.env.*
+config/*.json
+!config/example.json
+*.keystore
+*.jks
+key.properties
+
+# Claude Code: the shared CLAUDE.md is committed, personal settings aren't.
+.claude/settings.local.json

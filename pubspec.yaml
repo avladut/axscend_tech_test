@@ -1,0 +1,38 @@
+name: axscend_tech_test_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+# Pub workspace: one dependency resolution and one pubspec.lock for every
+# package below. Melos (configured at the bottom) runs commands across them.
+workspace:
+  - apps/axscend_tech_test
+  - packages/app_ui
+  - packages/domain
+  - packages/jsonplaceholder_data
+
+dev_dependencies:
+  # Pinned by pubspec.lock; a global `melos` switches to this version.
+  melos: ^8.10.0
+  very_good_analysis: ^11.0.0
+
+melos:
+  scripts:
+    # `dart run melos` uses the pinned version, so no global install is needed
+    # (Melos 8.10 steps only recognise some built-ins, e.g. not analyze/test).
+    check:format:
+      description: Fail if any Dart file isn't formatted.
+      run: dart run melos format --set-exit-if-changed --output none
+    check:analyze:
+      description: Analyze every package. Infos and warnings fail the run.
+      run: dart run melos analyze --no-pub
+    check:test:
+      description: Run the tests of every package that has a test/ folder.
+      run: dart run melos test --no-pub
+    ci:
+      description: Everything the CI pipeline runs, in the same order.
+      steps:
+        - check:format
+        - check:analyze
+        - check:test
