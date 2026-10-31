@@ -83,6 +83,14 @@ Future<int> runCli(
   }
 
   final printOnly = args.flag('print');
+
+  // Failures go to stderr and, on GitHub, also become an error annotation,
+  // so they show on the run's summary page.
+  void logFailure(String message) {
+    err.writeln(message);
+    if (!printOnly) out.writeln('::error::$message');
+  }
+
   final maxFindings = int.tryParse(args.option('max-findings')!);
   final maxDiffChars = int.tryParse(args.option('max-diff-chars')!);
   if (maxFindings == null || maxFindings < 1 || maxDiffChars == null) {
@@ -119,7 +127,7 @@ Future<int> runCli(
       );
       return 0;
     } on PublishException catch (error) {
-      err.writeln(error.message);
+      logFailure(error.message);
       return 1;
     } finally {
       if (httpClient == null) client.close();
@@ -200,10 +208,10 @@ Future<int> runCli(
     }
     return 0;
   } on GitException catch (error) {
-    err.writeln(error.message);
+    logFailure(error.message);
     return 1;
   } on PublishException catch (error) {
-    err.writeln(error.message);
+    logFailure(error.message);
     return 1;
   } finally {
     if (httpClient == null) client.close();

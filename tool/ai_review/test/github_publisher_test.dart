@@ -29,7 +29,10 @@ void main() {
       );
     }
 
-    Map<String, Object?> review(String login, String body) => {
+    // Ids grow in the order reviews are written here, like on GitHub.
+    var nextId = 0;
+    Map<String, Object?> review(String login, String body, {int? id}) => {
+      'id': id ?? ++nextId,
       'user': {'login': login},
       'body': body,
     };
@@ -91,6 +94,69 @@ void main() {
       test('returns null without earlier reviews', () async {
         final publisher = publisherWith((_) => http.Response('[]', 200));
         expect(await publisher.lastReviewedSha(), isNull);
+      });
+
+      test(
+        'picks the newest review even when the list is out of order',
+        () async {
+          final publisher = publisherWith(
+            (_) => http.Response(
+              jsonEncode([
+                review(
+                  'github-actions[bot]',
+                  ReviewFormatter.marker(shaB),
+                  id: 30,
+                ),
+                review(
+                  'github-actions[bot]',
+                  ReviewFormatter.marker(shaA),
+                  id: 10,
+                ),
+              ]),
+              200,
+            ),
+          );
+
+          expect(await publisher.lastReviewedSha(), shaB);
+        },
+      );
+
+      test('reports GitHub being unreachable as a PublishException', () async {
+        final publisher = publisherWith(
+          (_) => throw http.ClientException('Connection refused'),
+        );
+
+        await expectLater(
+          publisher.lastReviewedSha(),
+          throwsA(
+            isA<PublishException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('Could not reach GitHub for GET'),
+                contains('Connection refused'),
+                isNot(contains('gh-token')),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('reports a reply that is not JSON as a PublishException', () async {
+        final publisher = publisherWith(
+          (_) => http.Response('<html>maintenance</html>', 200),
+        );
+
+        await expectLater(
+          publisher.lastReviewedSha(),
+          throwsA(
+            isA<PublishException>().having(
+              (e) => e.message,
+              'message',
+              contains('not JSON'),
+            ),
+          ),
+        );
       });
 
       test('fails clearly when GitHub refuses', () async {
@@ -183,6 +249,23 @@ void main() {
           expect(bodyOf(requests[3])['body'], contains('On the file'));
         },
       );
+
+      test('reports a failed post as a PublishException', () async {
+        final publisher = publisherWith(
+          (_) => throw http.ClientException('Connection reset'),
+        );
+
+        await expectLater(
+          publisher.publish(report, [onLine]),
+          throwsA(
+            isA<PublishException>().having(
+              (e) => e.message,
+              'message',
+              contains('Could not reach GitHub for POST'),
+            ),
+          ),
+        );
+      });
 
       test('never approves or requests changes', () async {
         final publisher = publisherWith((_) => http.Response('{}', 201));

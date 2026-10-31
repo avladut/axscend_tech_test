@@ -46,22 +46,29 @@ class GitHubPublisher implements ReviewPublisher {
   @override
   Future<String?> lastReviewedSha() async {
     String? last;
+    int? lastId;
     for (var page = 1; page <= _maxPages; page++) {
       final reviews = await _get(
         '$_pullPath/reviews',
         query: {'per_page': '$_pageSize', 'page': '$page'},
       );
       if (reviews is! List || reviews.isEmpty) break;
-      // GitHub lists reviews oldest first, so the last match wins.
+      // The newest marked review wins. GitHub documents oldest-first order,
+      // but review ids only ever grow, so the highest id is newest whatever
+      // order the list arrives in.
       for (final review in reviews) {
         if (review
             case {
+              'id': final int id,
               'user': {'login': final String login},
               'body': final String body,
             }
-            when login == botLogin) {
+            when login == botLogin && (lastId == null || id > lastId)) {
           final match = ReviewFormatter.markerPattern.firstMatch(body);
-          if (match != null) last = match.group(1);
+          if (match != null) {
+            last = match.group(1);
+            lastId = id;
+          }
         }
       }
       if (reviews.length < _pageSize) break;
@@ -157,9 +164,37 @@ class GitHubPublisher implements ReviewPublisher {
       _apiBase.replace(path: '${_apiBase.path}$path', queryParameters: query);
 
   Future<Object?> _get(String path, {Map<String, String>? query}) async {
-    final response = await _client.get(_uri(path, query), headers: _headers);
+    final response = await _send(
+      'GET',
+      path,
+      () => _client.get(_uri(path, query), headers: _headers),
+    );
     _check('GET', path, response);
-    return jsonDecode(response.body);
+    try {
+      return jsonDecode(response.body);
+    } on FormatException {
+      throw PublishException(
+        'GitHub GET $path answered HTTP ${response.statusCode} with a body '
+        'that is not JSON.',
+      );
+    }
+  }
+
+  /// Turns any failure to talk to GitHub (network, TLS…) into a
+  /// [PublishException], which the CLI catches and logs. The token is only
+  /// ever in a header, so it can't appear in the message.
+  static Future<http.Response> _send(
+    String method,
+    String path,
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      return await request();
+    } on Exception catch (error) {
+      throw PublishException(
+        'Could not reach GitHub for $method $path: $error',
+      );
+    }
   }
 
   /// [hasLineThreads]: a 422 then most likely means a line position GitHub
@@ -169,10 +204,14 @@ class GitHubPublisher implements ReviewPublisher {
     Map<String, Object?> json, {
     bool hasLineThreads = false,
   }) async {
-    final response = await _client.post(
-      _uri(path),
-      headers: {..._headers, 'Content-Type': 'application/json'},
-      body: jsonEncode(json),
+    final response = await _send(
+      'POST',
+      path,
+      () => _client.post(
+        _uri(path),
+        headers: {..._headers, 'Content-Type': 'application/json'},
+        body: jsonEncode(json),
+      ),
     );
     if (response.statusCode == 422 && hasLineThreads) {
       throw const _Unprocessable();

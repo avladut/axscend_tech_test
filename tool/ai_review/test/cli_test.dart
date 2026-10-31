@@ -32,7 +32,8 @@ void main() {
     };
 
     FakeGitRunner git() => FakeGitRunner({
-      'rev-parse --verify HEAD^{commit}': const GitResult(0, '$shaB\n', ''),
+      // Any ref (HEAD, or the HEAD_SHA GitHub passes) resolves to shaB.
+      'rev-parse --verify ': const GitResult(0, '$shaB\n', ''),
       'diff ': const GitResult(0, _diff, ''),
     });
 
@@ -72,6 +73,49 @@ void main() {
       final body = (jsonDecode(posted.single) as Map)['body'] as String;
       expect(body, contains('### 🤖 AI review: not configured'));
       expect(body, contains('AI_REVIEW_API_KEY'));
+    });
+
+    const gitHubEnv = {
+      'GITHUB_TOKEN': 'gh-token',
+      'GITHUB_REPOSITORY': 'avladut/axscend_tech_test',
+      'PR_NUMBER': '7',
+      'HEAD_SHA': shaB,
+    };
+
+    test(
+      'catches and logs GitHub being down in the "not configured" path',
+      () async {
+        final code = await runCli(
+          const [],
+          environment: gitHubEnv,
+          out: out,
+          err: err,
+          httpClient: MockClient(
+            (_) async => throw http.ClientException('Connection refused'),
+          ),
+        );
+
+        expect(code, 1);
+        expect(err.toString(), contains('Could not reach GitHub for POST'));
+        expect(out.toString(), contains('::error::Could not reach GitHub'));
+      },
+    );
+
+    test('catches and logs GitHub being down in the review path', () async {
+      final code = await runCli(
+        const [],
+        environment: {...modelEnv, ...gitHubEnv},
+        out: out,
+        err: err,
+        git: git(),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('Connection refused'),
+        ),
+      );
+
+      expect(code, 1);
+      expect(err.toString(), contains('Could not reach GitHub for GET'));
+      expect(out.toString(), contains('::error::Could not reach GitHub'));
     });
 
     test('fails locally when not configured', () async {
