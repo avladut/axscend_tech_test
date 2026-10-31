@@ -207,6 +207,27 @@ void main() {
       expect(ReviewFormatter.markerPattern.hasMatch(body), isFalse);
     });
 
+    test(
+      'posts a note as a COMMENT review, with the marker if given',
+      () async {
+        final publisher = publisherWith((_) => http.Response('{}', 201));
+
+        await publisher.publishNote(
+          title: 'nothing to review',
+          detail: 'Only lockfiles changed.',
+          reviewedSha: shaB,
+        );
+
+        final request = bodyOf(requests.single);
+        expect(requests.single.url.path, endsWith('/pulls/7/reviews'));
+        expect(request['event'], 'COMMENT');
+        expect(request.containsKey('comments'), isFalse);
+        final body = request['body']! as String;
+        expect(ReviewFormatter.markerPattern.firstMatch(body)?.group(1), shaB);
+        expect(body, contains('nothing to review'));
+      },
+    );
+
     test('works with a GitHub Enterprise API base', () async {
       final publisher = publisherWith(
         (_) => http.Response('[]', 200),

@@ -66,13 +66,17 @@ void main() {
       expect(log.join(), contains('force-push'));
     });
 
-    test('does nothing when the commit was already reviewed', () async {
+    test('says so when the commit was already reviewed', () async {
       final outcome = await service(lastSha: shaB)
           .run(base: 'main', head: 'HEAD');
 
       expect(outcome, ReviewOutcome.alreadyReviewed);
       expect(model.calls, 0);
       expect(publisher.report, isNull);
+      final note = publisher.notes.single;
+      expect(note.title, 'already reviewed');
+      expect(note.detail, contains('`bbbbbbb` was already reviewed'));
+      expect(note.reviewedSha, isNull);
     });
 
     test('ignores earlier reviews when not incremental', () async {
@@ -83,13 +87,56 @@ void main() {
       expect(publisher.report, isNotNull);
     });
 
-    test('skips the model when nothing reviewable changed', () async {
-      final outcome = await service(files: [addedFile('pubspec.lock')])
-          .run(base: 'main', head: 'HEAD');
+    test(
+      'skips the model but says so when nothing reviewable changed',
+      () async {
+        final outcome = await service(files: [addedFile('pubspec.lock')])
+            .run(base: 'main', head: 'HEAD');
 
-      expect(outcome, ReviewOutcome.nothingToReview);
-      expect(model.calls, 0);
-      expect(publisher.report, isNull);
+        expect(outcome, ReviewOutcome.nothingToReview);
+        expect(model.calls, 0);
+        expect(publisher.report, isNull);
+        final note = publisher.notes.single;
+        expect(note.title, 'nothing to review');
+        expect(note.detail, startsWith('This pull request changes only files'));
+        expect(note.detail, contains('`pubspec.lock`'));
+        // Recorded as reviewed, so the next push starts from here.
+        expect(note.reviewedSha, shaB);
+      },
+    );
+
+    test('says so when new commits change no files at all', () async {
+      await service(
+        lastSha: shaA,
+        ancestors: {'$shaA..$shaB'},
+        files: const [],
+      ).run(base: 'main', head: 'HEAD');
+
+      expect(
+        publisher.notes.single.detail,
+        'The commits since `aaaaaaa` change no files.',
+      );
+    });
+
+    test('is never silent', () async {
+      // Each setup builds a fresh service and publisher.
+      final setups = <ReviewService Function()>[
+        service,
+        () => service(lastSha: shaB),
+        () => service(files: [addedFile('pubspec.lock')]),
+        () => service(
+          withModel: FakeModel(error: const ReviewModelException('down')),
+        ),
+        () => service(
+          withModel: FakeModel(
+            answer: '{"summary": "Nothing to flag.", "findings": []}',
+          ),
+        ),
+      ];
+      for (final setup in setups) {
+        await setup().run(base: 'main', head: 'HEAD');
+        expect(publisher.saidSomething, isTrue);
+      }
     });
 
     test('posts "unavailable" when the model fails', () async {

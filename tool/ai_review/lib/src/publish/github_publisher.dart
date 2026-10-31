@@ -112,6 +112,21 @@ class GitHubPublisher implements ReviewPublisher {
     'body': _formatter.unavailableBody(reason: reason, model: model),
   });
 
+  @override
+  Future<void> publishNote({
+    required String title,
+    required String detail,
+    String? reviewedSha,
+  }) => _post('$_pullPath/reviews', {
+    'commit_id': headSha,
+    'event': 'COMMENT',
+    'body': _formatter.noteBody(
+      title: title,
+      detail: detail,
+      reviewedSha: reviewedSha,
+    ),
+  });
+
   Future<void> _createReview(
     String body,
     List<PlannedComment> onLines,

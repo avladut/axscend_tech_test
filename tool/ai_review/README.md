@@ -21,8 +21,15 @@ depends on it.
    Branch protection only allows the merge once every thread is resolved. The
    bot never approves, blocks or merges.
 
-If the model server is down, the PR gets an "AI review unavailable" note and
-the job still ends green. PRs from forks get no secrets and are skipped.
+**The bot is never silent.** Every run leaves something on the PR:
+
+- the review, titled "no findings" when there's nothing to raise;
+- "nothing to review" when only files it skips changed;
+- "already reviewed" when the commit already has a review;
+- "unavailable" when the model server is down, with the job still green;
+- "not configured" when the secrets are missing.
+
+PRs from forks get no secrets and are skipped, with a notice in the job.
 
 ## Design
 

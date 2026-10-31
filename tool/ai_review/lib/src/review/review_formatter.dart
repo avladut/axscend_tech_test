@@ -44,9 +44,17 @@ class ReviewFormatter {
       'approves, blocks or merges.';
 
   String reviewBody(ReviewReport report) {
+    final noFindings = switch (report.review) {
+      StructuredReview(:final findings) => findings.isEmpty,
+      UnstructuredReview() => false,
+    };
     final out = StringBuffer()
       ..writeln(marker(report.headSha))
-      ..writeln('### 🤖 AI review (advisory)')
+      ..writeln(
+        noFindings
+            ? '### 🤖 AI review (advisory): no findings'
+            : '### 🤖 AI review (advisory)',
+      )
       ..writeln()
       ..writeln(_metaLine(report))
       ..writeln();
@@ -156,6 +164,23 @@ class ReviewFormatter {
       '${TextSafety.clean(reason)}.\n\n'
       'Nothing was reviewed for this push. The next push tries again, or '
       're-run the "AI review" workflow.';
+
+  /// A run without a model review ("nothing to review", "already
+  /// reviewed"…). [title] and [detail] are written by this tool, not by the
+  /// model. With [reviewedSha] the note carries the marker.
+  String noteBody({
+    required String title,
+    required String detail,
+    String? reviewedSha,
+  }) {
+    final out = StringBuffer();
+    if (reviewedSha != null) out.writeln(marker(reviewedSha));
+    out
+      ..writeln('### 🤖 AI review: $title')
+      ..writeln()
+      ..writeln(detail);
+    return out.toString();
+  }
 
   /// Plain-text version for `--print`.
   String consoleText(ReviewReport report, List<PlannedComment> comments) {

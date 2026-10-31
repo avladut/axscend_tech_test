@@ -14,6 +14,15 @@ abstract interface class ReviewPublisher {
     required String reason,
     required String model,
   });
+
+  /// A run that sends nothing to the model still says so on the PR: the bot
+  /// is never silent. With [reviewedSha], the note also records that commit
+  /// as reviewed, so the next push is diffed from there.
+  Future<void> publishNote({
+    required String title,
+    required String detail,
+    String? reviewedSha,
+  });
 }
 
 class PublishException implements Exception {

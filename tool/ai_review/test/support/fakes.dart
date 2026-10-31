@@ -135,6 +135,11 @@ class RecordingPublisher implements ReviewPublisher {
   ReviewReport? report;
   List<PlannedComment>? comments;
   String? unavailableReason;
+  final notes = <({String title, String detail, String? reviewedSha})>[];
+
+  /// True when this run left something visible on the PR.
+  bool get saidSomething =>
+      report != null || unavailableReason != null || notes.isNotEmpty;
 
   @override
   Future<String?> lastReviewedSha() async {
@@ -156,6 +161,14 @@ class RecordingPublisher implements ReviewPublisher {
     required String reason,
     required String model,
   }) async => unavailableReason = reason;
+
+  @override
+  Future<void> publishNote({
+    required String title,
+    required String detail,
+    String? reviewedSha,
+  }) async =>
+      notes.add((title: title, detail: detail, reviewedSha: reviewedSha));
 }
 
 /// Answers git commands from a table: the joined arguments → result.

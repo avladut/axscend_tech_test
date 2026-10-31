@@ -25,4 +25,13 @@ class ConsolePublisher implements ReviewPublisher {
     required String model,
   }) async =>
       _out.writeln(_formatter.unavailableBody(reason: reason, model: model));
+
+  @override
+  Future<void> publishNote({
+    required String title,
+    required String detail,
+    String? reviewedSha,
+  }) async => _out.writeln(
+    _formatter.noteBody(title: title, detail: detail, reviewedSha: reviewedSha),
+  );
 }

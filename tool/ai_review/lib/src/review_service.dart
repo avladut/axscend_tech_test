@@ -45,6 +45,16 @@ class ReviewService {
 
   static void _ignore(String _) {}
 
+  static String _short(String sha) =>
+      sha.length > 7 ? sha.substring(0, 7) : sha;
+
+  /// Up to 10 paths in backticks, then "and N more".
+  static String _listPaths(Iterable<String> paths) {
+    final all = paths.toList();
+    final shown = all.take(10).map((path) => '`$path`').join(', ');
+    return all.length > 10 ? '$shown and ${all.length - 10} more' : shown;
+  }
+
   /// Reviews [head] against [base]. With [incremental], a later push is
   /// reviewed only from the last reviewed commit, so findings aren't
   /// repeated; a rebase or force-push falls back to the whole PR.
@@ -60,13 +70,19 @@ class ReviewService {
     if (incremental) {
       final last = await _publisher.lastReviewedSha();
       if (last == headSha) {
-        _log('Commit ${headSha.substring(0, 7)} was already reviewed.');
+        _log('Commit ${_short(headSha)} was already reviewed.');
+        await _publisher.publishNote(
+          title: 'already reviewed',
+          detail:
+              'Commit `${_short(headSha)}` was already reviewed above, so '
+              'there is nothing new to review in this run.',
+        );
         return ReviewOutcome.alreadyReviewed;
       }
       if (last != null) {
         if (await _diffSource.isAncestor(last, headSha)) {
           since = last;
-          _log('Reviewing only the commits after ${last.substring(0, 7)}.');
+          _log('Reviewing only the commits after ${_short(last)}.');
         } else {
           _log(
             'The last reviewed commit is no longer in this branch (rebase or '
@@ -81,9 +97,20 @@ class ReviewService {
         : await _diffSource.rangeDiff(from: since, to: headSha);
     final selection = _filter.select(files);
     if (selection.isEmpty) {
-      _log(
-        'No reviewable changes (only lockfiles, generated or platform '
-        'files changed).',
+      final changes = since == null
+          ? 'This pull request changes'
+          : 'The commits since `${_short(since)}` change';
+      final detail = files.isEmpty
+          ? '$changes no files.'
+          : '$changes only files the reviewer skips (lockfiles, '
+                'generated code, platform folders, binaries or deleted '
+                'files): ${_listPaths(files.map((file) => file.path))}. '
+                'Nothing was sent to the model.';
+      _log('No reviewable changes.');
+      await _publisher.publishNote(
+        title: 'nothing to review',
+        detail: detail,
+        reviewedSha: headSha,
       );
       return ReviewOutcome.nothingToReview;
     }

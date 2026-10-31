@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ai_review/ai_review.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:test/test.dart';
 
@@ -45,6 +46,32 @@ void main() {
 
       expect(code, 0);
       expect(out.toString(), startsWith('::notice::'));
+    });
+
+    test('says "not configured" on the PR when it can', () async {
+      final posted = <String>[];
+      final client = MockClient((request) async {
+        posted.add(request.body);
+        return http.Response('{}', 201);
+      });
+
+      final code = await runCli(
+        const [],
+        environment: {
+          'GITHUB_TOKEN': 'gh-token',
+          'GITHUB_REPOSITORY': 'avladut/axscend_tech_test',
+          'PR_NUMBER': '7',
+          'HEAD_SHA': shaB,
+        },
+        out: out,
+        err: err,
+        httpClient: client,
+      );
+
+      expect(code, 0);
+      final body = (jsonDecode(posted.single) as Map)['body'] as String;
+      expect(body, contains('### 🤖 AI review: not configured'));
+      expect(body, contains('AI_REVIEW_API_KEY'));
     });
 
     test('fails locally when not configured', () async {

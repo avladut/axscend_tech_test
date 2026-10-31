@@ -87,8 +87,16 @@ void main() {
       final body = formatter.reviewBody(
         report(const StructuredReview(summary: '', findings: [])),
       );
+      expect(body, contains('### 🤖 AI review (advisory): no findings'));
       expect(body, contains('_No summary._'));
       expect(body, contains('**No findings.**'));
+    });
+
+    test('keeps the plain title when there are findings', () {
+      final body = formatter.reviewBody(
+        report(StructuredReview(summary: 's', findings: [finding()])),
+      );
+      expect(body, contains('### 🤖 AI review (advisory)\n'));
     });
 
     test('warns when the answer was not JSON', () {
@@ -132,6 +140,26 @@ void main() {
         model: 'm',
       );
       expect(body, contains('General finding (about `lib/gone.dart`)'));
+    });
+  });
+
+  group('ReviewFormatter.noteBody', () {
+    test('carries the marker only when a commit is given', () {
+      final withSha = formatter.noteBody(
+        title: 'nothing to review',
+        detail: 'Only lockfiles changed.',
+        reviewedSha: shaB,
+      );
+      final without = formatter.noteBody(
+        title: 'already reviewed',
+        detail: 'Nothing new.',
+      );
+
+      expect(ReviewFormatter.markerPattern.firstMatch(withSha)?.group(1), shaB);
+      expect(withSha, contains('### 🤖 AI review: nothing to review'));
+      expect(withSha, contains('Only lockfiles changed.'));
+      expect(ReviewFormatter.markerPattern.hasMatch(without), isFalse);
+      expect(without, startsWith('### 🤖 AI review: already reviewed'));
     });
   });
 

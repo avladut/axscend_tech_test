@@ -105,7 +105,25 @@ Future<int> runCli(
       return _usageError;
     }
     out.writeln('::notice::$message Skipping the review.');
-    return 0;
+    // Still say so on the PR: the bot is never silent.
+    final target = _gitHubTarget(environment);
+    final headSha = _nonEmpty(environment['HEAD_SHA']);
+    if (target == null || headSha == null) return 0;
+    final client = httpClient ?? http.Client();
+    try {
+      await _gitHubPublisher(target, client, headSha).publishNote(
+        title: 'not configured',
+        detail:
+            'The `AI_REVIEW_BASE_URL` and `AI_REVIEW_API_KEY` secrets are not '
+            'set on this repository, so nothing was reviewed.',
+      );
+      return 0;
+    } on PublishException catch (error) {
+      err.writeln(error.message);
+      return 1;
+    } finally {
+      if (httpClient == null) client.close();
+    }
   }
   final modelName = _nonEmpty(environment['AI_REVIEW_MODEL']) ?? defaultModel;
 
@@ -130,24 +148,18 @@ Future<int> runCli(
     if (printOnly) {
       publisher = ConsolePublisher(out);
     } else {
-      final token = _nonEmpty(environment['GITHUB_TOKEN']);
-      final repository = _nonEmpty(environment['GITHUB_REPOSITORY']);
-      final pullNumber = int.tryParse(environment['PR_NUMBER'] ?? '');
-      if (token == null || repository == null || pullNumber == null) {
+      final target = _gitHubTarget(environment);
+      if (target == null) {
         err.writeln(
           'Posting to GitHub needs GITHUB_TOKEN, GITHUB_REPOSITORY '
           'and PR_NUMBER. Use --print to review locally.',
         );
         return _usageError;
       }
-      final apiUrl = _nonEmpty(environment['GITHUB_API_URL']);
-      publisher = GitHubPublisher(
-        repository: repository,
-        pullNumber: pullNumber,
-        headSha: await diffSource.resolve(head),
-        token: token,
-        client: client,
-        apiBase: apiUrl == null ? null : Uri.parse(apiUrl),
+      publisher = _gitHubPublisher(
+        target,
+        client,
+        await diffSource.resolve(head),
       );
       pullRequest = PullRequestInfo(
         title: environment['PR_TITLE'],
@@ -197,6 +209,41 @@ Future<int> runCli(
     if (httpClient == null) client.close();
   }
 }
+
+/// The PR to post on, from the Actions environment. Null when incomplete.
+typedef _GitHubTarget = ({
+  String token,
+  String repository,
+  int pullNumber,
+  Uri? apiBase,
+});
+
+_GitHubTarget? _gitHubTarget(Map<String, String> environment) {
+  final token = _nonEmpty(environment['GITHUB_TOKEN']);
+  final repository = _nonEmpty(environment['GITHUB_REPOSITORY']);
+  final pullNumber = int.tryParse(environment['PR_NUMBER'] ?? '');
+  if (token == null || repository == null || pullNumber == null) return null;
+  final apiUrl = _nonEmpty(environment['GITHUB_API_URL']);
+  return (
+    token: token,
+    repository: repository,
+    pullNumber: pullNumber,
+    apiBase: apiUrl == null ? null : Uri.parse(apiUrl),
+  );
+}
+
+GitHubPublisher _gitHubPublisher(
+  _GitHubTarget target,
+  http.Client client,
+  String headSha,
+) => GitHubPublisher(
+  repository: target.repository,
+  pullNumber: target.pullNumber,
+  headSha: headSha,
+  token: target.token,
+  client: client,
+  apiBase: target.apiBase,
+);
 
 String? _nonEmpty(String? value) {
   final trimmed = value?.trim();
