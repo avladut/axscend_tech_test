@@ -18,6 +18,13 @@
 
 - Never commit to `main`. One branch per task (`task/NN-short-name`), merged
   through a pull request.
+- PRs are squash-merged, which is the only method the repo allows, so `main`
+  gets **one commit per task**:
+  - Title each PR `Task NN: what it solves`; that becomes the commit title.
+  - The squash keeps the branch's commit messages, including the
+    `Co-Authored-By` lines.
+  - Small, meaningful commits on the branch are still welcome: the PR keeps
+    them as its history.
 - Every task starts from a prompt Alex approved in
   `docs/ai/prompts/NN-short-name.md`. Don't start a task without one. Save
   Alex's own words verbatim; put your plan under "Agent plan".

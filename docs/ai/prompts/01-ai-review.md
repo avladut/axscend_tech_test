@@ -33,6 +33,15 @@ Claude on CI failures and new review comments. He set this condition:
 CLAUDE.md now spells out what that means. Claude discusses each finding in
 its thread and changes code only after Alex decides.
 
+Before merging, Alex asked:
+
+> I want the commits squashed, one commit per mr/problem solved
+
+The repo now allows only "Squash and merge". The PR title becomes the commit
+title, and the commit messages, `Co-Authored-By` lines included, become its
+body. The PR itself keeps the step-by-step commits, such as draft → approved
+prompt.
+
 ## Context
 
 - Claude Code writes the code. A second model, of a different family, reviews
