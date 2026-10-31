@@ -48,6 +48,7 @@ apps/axscend_tech_test/         Flutter app: screens, cubits, routing, DI
 packages/app_ui/                Flutter: design tokens, theme, reusable widgets
 packages/domain/                Pure Dart: models, repository contracts, failures
 packages/jsonplaceholder_data/  Pure Dart: the JSONPlaceholder backend
+tool/ai_review/                 Dev tooling: the AI pull request reviewer
 docs/adr/                       Architecture decisions
 docs/ai/prompts/                The prompt behind each task
 ```
@@ -65,6 +66,12 @@ Which package may use which:
   pass first.
 - Each task starts from a prompt I write or approve, kept in
   [docs/ai/prompts](docs/ai/prompts).
+- **AI review, human decision.** Every PR is also reviewed by a second model
+  of a different family, running on my own server
+  ([tool/ai_review](tool/ai_review)). Each finding is a separate thread. I
+  reply to each one (accept, or ask for a change) and resolve it, and `main`
+  only accepts the merge once every thread is resolved. The bot only
+  comments: it never approves, blocks or merges.
 - AI use: the code is written with Claude Code under my direction. Commits it
   wrote carry a `Co-Authored-By: Claude` line. A full write-up of how AI was
   used, and where it was wrong, comes before submission.
