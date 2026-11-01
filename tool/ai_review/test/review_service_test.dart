@@ -13,6 +13,7 @@ void main() {
     ReviewService service({
       String? lastSha,
       List<FileDiff>? files,
+      List<FileDiff>? rangeFiles,
       Set<String> ancestors = const {},
       FakeModel? withModel,
     }) {
@@ -20,6 +21,7 @@ void main() {
       publisher = RecordingPublisher(lastSha: lastSha);
       diffSource = FakeDiffSource(
         files: files ?? [addedFile('lib/a.dart')],
+        rangeFiles: rangeFiles,
         ancestors: ancestors,
       );
       log = [];
@@ -53,10 +55,42 @@ void main() {
       ).run(base: 'main', head: 'HEAD');
 
       expect(outcome, ReviewOutcome.published);
-      expect(diffSource.calls, ['range $shaA..$shaB']);
+      expect(diffSource.calls, ['pr main...$shaB', 'range $shaA..$shaB']);
       expect(model.lastUser, contains('pushed since the last review'));
       expect(publisher.report!.sinceSha, shaA);
     });
+
+    test('skips files the new commits changed outside the PR', () async {
+      // A merge from main brings main's files into the range.
+      await service(
+        lastSha: shaA,
+        ancestors: {'$shaA..$shaB'},
+        files: [addedFile('lib/a.dart')],
+        rangeFiles: [addedFile('lib/a.dart'), addedFile('lib/from_main.dart')],
+      ).run(base: 'main', head: 'HEAD');
+
+      expect(model.lastUser, contains('lib/a.dart'));
+      expect(model.lastUser, isNot(contains('lib/from_main.dart')));
+      expect(log.join(), contains('outside this PR'));
+    });
+
+    test(
+      'says so when the new commits only bring in base-branch files',
+      () async {
+        final outcome = await service(
+          lastSha: shaA,
+          ancestors: {'$shaA..$shaB'},
+          files: [addedFile('lib/a.dart')],
+          rangeFiles: [addedFile('lib/from_main.dart')],
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(outcome, ReviewOutcome.nothingToReview);
+        expect(model.calls, 0);
+        final note = publisher.notes.single;
+        expect(note.detail, contains("none of this pull request's own files"));
+        expect(note.reviewedSha, shaB);
+      },
+    );
 
     test('reviews the whole PR again after a force-push', () async {
       await service(lastSha: shaA).run(base: 'main', head: 'HEAD');

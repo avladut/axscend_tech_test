@@ -92,20 +92,46 @@ class ReviewService {
       }
     }
 
-    final files = since == null
-        ? await _diffSource.pullRequestDiff(base: base, head: headSha)
-        : await _diffSource.rangeDiff(from: since, to: headSha);
+    final prFiles = await _diffSource.pullRequestDiff(
+      base: base,
+      head: headSha,
+    );
+    var files = prFiles;
+    var outsidePr = 0;
+    if (since != null) {
+      // Merging the base branch in brings its changes into the range. They
+      // aren't this PR's, and GitHub refuses comments on files outside the
+      // PR's diff, so only the files the PR itself changes are kept.
+      final own = {for (final file in prFiles) file.path};
+      final range = await _diffSource.rangeDiff(from: since, to: headSha);
+      files = [
+        for (final file in range)
+          if (own.contains(file.path)) file,
+      ];
+      outsidePr = range.length - files.length;
+      if (outsidePr > 0) {
+        _log(
+          'Skipping $outsidePr file(s) the new commits changed outside this '
+          'PR, such as a merge from the base branch.',
+        );
+      }
+    }
     final selection = _filter.select(files);
     if (selection.isEmpty) {
       final changes = since == null
           ? 'This pull request changes'
           : 'The commits since `${_short(since)}` change';
-      final detail = files.isEmpty
-          ? '$changes no files.'
-          : '$changes only files the reviewer skips (lockfiles, '
-                'generated code, platform folders, binaries or deleted '
-                'files): ${_listPaths(files.map((file) => file.path))}. '
-                'Nothing was sent to the model.';
+      final detail = switch (files) {
+        [] when outsidePr > 0 =>
+          "$changes none of this pull request's own files: only files "
+              'that came from the base branch, such as in a merge.',
+        [] => '$changes no files.',
+        _ =>
+          '$changes only files the reviewer skips (lockfiles, '
+              'generated code, platform folders, binaries or deleted '
+              'files): ${_listPaths(files.map((file) => file.path))}. '
+              'Nothing was sent to the model.',
+      };
       _log('No reviewable changes.');
       await _publisher.publishNote(
         title: 'nothing to review',

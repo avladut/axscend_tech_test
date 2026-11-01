@@ -12,12 +12,16 @@ workspace:
   - packages/domain
   - packages/jsonplaceholder_data
   - tool/ai_review
+  - tool/coverage_gate
 
 dev_dependencies:
   # Lets `dart run ai_review` work from the repo root. Dev tooling only:
   # the app never depends on it.
   ai_review:
     path: tool/ai_review
+  # Lets `dart run coverage_gate` work from the repo root. Dev tooling too.
+  coverage_gate:
+    path: tool/coverage_gate
   # Pinned by pubspec.lock; a global `melos` switches to this version.
   melos: ^8.10.0
   very_good_analysis: ^11.0.0
@@ -33,11 +37,33 @@ melos:
       description: Analyze every package. Infos and warnings fail the run.
       run: dart run melos analyze --no-pub
     check:test:
-      description: Run the tests of every package that has a test/ folder.
-      run: dart run melos test --no-pub
+      description: >-
+        Run every package's tests, each writing its coverage to
+        coverage/lcov.info. Old reports are deleted first.
+      steps:
+        - test:clean
+        - test:dart
+        - test:flutter
+    test:clean:
+      description: Delete coverage reports from earlier runs.
+      run: dart run melos exec -- rm -rf coverage
+    test:dart:
+      description: Test the pure Dart packages with coverage.
+      run: >-
+        dart run melos exec --no-flutter --dir-exists=test --
+        dart test --coverage-path=coverage/lcov.info
+    test:flutter:
+      description: Test the Flutter packages with coverage.
+      run: >-
+        dart run melos exec --flutter --dir-exists=test --
+        flutter test --coverage
+    check:coverage:
+      description: Fail unless each package covers at least 70% of its lines.
+      run: dart run coverage_gate --min 70
     ci:
       description: Everything the CI pipeline runs, in the same order.
       steps:
         - check:format
         - check:analyze
         - check:test
+        - check:coverage
