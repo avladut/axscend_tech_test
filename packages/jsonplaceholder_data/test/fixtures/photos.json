@@ -1,0 +1,16 @@
+[
+  {
+    "albumId": 1,
+    "id": 1,
+    "title": "accusamus beatae ad facilis cum similique qui sunt",
+    "url": "https://picsum.photos/seed/1/600",
+    "thumbnailUrl": "https://picsum.photos/seed/1/150"
+  },
+  {
+    "albumId": 1,
+    "id": 2,
+    "title": "reprehenderit est deserunt velit ipsam",
+    "url": "https://picsum.photos/seed/2/600",
+    "thumbnailUrl": "https://picsum.photos/seed/2/150"
+  }
+]
