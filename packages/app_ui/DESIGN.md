@@ -93,7 +93,7 @@ Read them in widgets through `BuildContext`:
 
 | Component | Use it for |
 |---|---|
-| `AppSearchField` | Searching a list. The clear button shows once something is typed, and the field follows `value` when the app resets it. |
+| `AppSearchField` | Searching a list. The clear button shows once something is typed, and the field follows `value` when the app resets it. No autocorrect or suggestions, so a typed name stays as it was typed. |
 | `AppChoiceChips<T>` | Picking one filter out of a few, such as All, Done or Pending. |
 | `AppSortButton<T>` | Picking a sort order from a menu, with the current one ticked. |
 

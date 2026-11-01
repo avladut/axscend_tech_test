@@ -65,6 +65,22 @@ void main() {
   });
 
   group(AppSearchField, () {
+    testWidgets('leaves what is typed alone: no autocorrect or suggestions', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        AppSearchField(
+          hint: 'Search',
+          clearTooltip: 'Clear',
+          onChanged: (_) {},
+        ),
+      );
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.autocorrect, isFalse);
+      expect(field.enableSuggestions, isFalse);
+    });
+
     testWidgets('reports typing, and clears with its button', (tester) async {
       final changes = <String>[];
       await tester.pumpApp(
