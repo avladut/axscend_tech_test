@@ -32,6 +32,7 @@ class ReviewService {
     this._parser = const ReviewParser(),
     this._filter = const DiffFilter(),
     this._planner = const CommentPlanner(),
+    this.deadline = const Duration(minutes: 12),
     void Function(String message)? log,
   }) : _log = log ?? _ignore;
 
@@ -42,6 +43,11 @@ class ReviewService {
   final ReviewParser _parser;
   final DiffFilter _filter;
   final CommentPlanner _planner;
+
+  /// No part starts after this long, so the run ends, and posts what it
+  /// has, well inside the CI job's time limit. A model call can take up to
+  /// about 8 minutes (two tries), so 12 + 8 stays under the job's 25.
+  final Duration deadline;
   final void Function(String message) _log;
 
   static void _ignore(String _) {}
@@ -156,6 +162,12 @@ class ReviewService {
     final stopwatch = Stopwatch()..start();
     // One part after another, so the server's other slot stays free.
     for (final (index, part) in parts.indexed) {
+      if (stopwatch.elapsed >= deadline) {
+        _log('Out of time: part ${index + 1} was not sent.');
+        failures.add('out of time after ${deadline.inMinutes} min');
+        unanswered.addAll(part.map((file) => file.path));
+        continue;
+      }
       _log(
         parts.length == 1
             ? 'Sending ${part.length} file(s) to ${_model.name}.'

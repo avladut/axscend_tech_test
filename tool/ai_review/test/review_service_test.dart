@@ -17,6 +17,7 @@ void main() {
       Set<String> ancestors = const {},
       FakeModel? withModel,
       DiffFilter filter = const DiffFilter(),
+      Duration deadline = const Duration(minutes: 12),
     }) {
       model = withModel ?? FakeModel();
       publisher = RecordingPublisher(lastSha: lastSha);
@@ -32,6 +33,7 @@ void main() {
         publisher: publisher,
         prompts: const PromptBuilder(systemTemplate: 'system'),
         filter: filter,
+        deadline: deadline,
         log: log.add,
       );
     }
@@ -259,6 +261,23 @@ void main() {
         expect(publisher.unavailableReason, isNull);
         expect(log.join('\n'), contains('Model unavailable for part 2'));
       });
+
+      test(
+        'starts no part after the deadline, and posts what it has',
+        () async {
+          final outcome = await service(
+            files: twoFiles,
+            filter: smallParts,
+            deadline: const Duration(milliseconds: 10),
+            withModel: FakeModel(delay: const Duration(milliseconds: 30)),
+          ).run(base: 'main', head: 'HEAD');
+
+          expect(outcome, ReviewOutcome.published);
+          expect(model.calls, 1);
+          expect(publisher.report!.unanswered, ['lib/b.dart']);
+          expect(log.join('\n'), contains('Out of time: part 2 was not sent.'));
+        },
+      );
 
       test('is unavailable only when every part fails', () async {
         final outcome = await service(
