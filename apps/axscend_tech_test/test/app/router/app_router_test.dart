@@ -112,6 +112,32 @@ void main() {
       expect(addresses, contains((userId: 7, albumId: 3, photoId: 2)));
     });
 
+    testWidgets('the same page with other ids gets a fresh bloc', (
+      tester,
+    ) async {
+      final router = createAppRouter(initialLocation: '/users/1/albums');
+      await tester.pumpWidget(App(router: router));
+      await tester.pumpAndSettle();
+
+      router.go('/users/2/albums');
+      await tester.pumpAndSettle();
+      router.go('/users/2/albums/3/photos/4');
+      await tester.pumpAndSettle();
+      router.go('/users/2/albums/3/photos/5');
+      await tester.pumpAndSettle();
+
+      // The album page under the photo builds its own bloc too.
+      expect(
+        addresses,
+        containsAllInOrder(<Object>[
+          1,
+          2,
+          (userId: 2, albumId: 3, photoId: 4),
+          (userId: 2, albumId: 3, photoId: 5),
+        ]),
+      );
+    });
+
     testWidgets('an id that is not a number is "page not found"', (
       tester,
     ) async {

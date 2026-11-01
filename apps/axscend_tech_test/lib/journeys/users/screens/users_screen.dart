@@ -31,31 +31,14 @@ class UsersView extends StatelessWidget {
     final state = context.watch<UsersBloc>().state;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.usersTitle)),
-      body: switch (state) {
-        UsersState(status: UsersStatus.failure, :final failure?) =>
-          DataFailureView(
-            failure: failure,
-            onRetry: () => context.read<UsersBloc>().add(
-              const UsersLoadRequested(refresh: true),
-            ),
-          ),
-        // Nothing has arrived yet. Later loads keep showing the list.
-        UsersState(window: PagedWindow(total: null)) => AppStatusView.loading(
-          title: l10n.usersLoading,
-        ),
-        UsersState(
-          status: UsersStatus.success,
-          window: PagedWindow(total: 0),
-          query: UserQuery(isSearching: false),
-        ) =>
-          AppStatusView.empty(title: l10n.usersEmptyTitle),
-        _ => _UsersContent(state: state),
-      },
+      body: _UsersContent(state: state),
     );
   }
 }
 
-/// The search field, the header with the count and sort menu, and the list.
+/// The search field, the header with the count and sort menu, and the list
+/// area. The search field stays in every state, so a search that failed can
+/// still be cleared.
 class _UsersContent extends StatelessWidget {
   const new({required this.state});
 
@@ -67,7 +50,7 @@ class _UsersContent extends StatelessWidget {
     final bloc = context.read<UsersBloc>();
     final query = state.query;
     final window = state.window;
-    final count = window.total ?? 0;
+    final count = window.total;
     return AppPage(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -94,38 +77,55 @@ class _UsersContent extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: count == 0
-                ? AppStatusView.empty(
-                    title: l10n.usersNoMatchTitle(query.search),
-                    message: l10n.usersNoMatchMessage,
-                  )
-                : RefreshIndicator(
-                    onRefresh: () => _refresh(bloc),
-                    // Builds only the rows on screen, from the pages in
-                    // memory. Any other row shows a placeholder until its
-                    // page arrives.
-                    child: ListView.builder(
-                      // Pull-to-refresh works even when the list is short.
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: count,
-                      itemBuilder: (context, index) {
-                        if (window.itemAt(index) case final user?) {
-                          return UserTile(
-                            user: user,
-                            onTap: () =>
-                                UserAlbumsRoute(userId: user.id).go(context),
-                          );
-                        }
-                        final page = window.pageOf(index);
-                        void request() => bloc.add(UsersPageRequested(page));
-                        return window.hasFailed(page)
-                            ? _FailedUserRow(onRetry: request)
-                            : _PendingUserRow(onShown: request);
-                      },
-                    ),
-                  ),
+            child: switch (state) {
+              UsersState(status: UsersStatus.failure, :final failure?) =>
+                DataFailureView(
+                  failure: failure,
+                  onRetry: () =>
+                      bloc.add(const UsersLoadRequested(refresh: true)),
+                ),
+              // Nothing to show yet. A new list that has rows keeps
+              // showing them while it reloads.
+              UsersState(window: PagedWindow(total: null)) ||
+              UsersState(
+                status: UsersStatus.loading,
+                window: PagedWindow(total: 0),
+              ) => AppStatusView.loading(title: l10n.usersLoading),
+              UsersState(window: PagedWindow(total: 0))
+                  when !query.isSearching =>
+                AppStatusView.empty(title: l10n.usersEmptyTitle),
+              UsersState(window: PagedWindow(total: 0)) => AppStatusView.empty(
+                title: l10n.usersNoMatchTitle(query.search),
+                message: l10n.usersNoMatchMessage,
+              ),
+              _ => RefreshIndicator(
+                onRefresh: () => _refresh(bloc),
+                // Builds only the rows on screen, from the pages in
+                // memory. Any other row shows a placeholder until its
+                // page arrives.
+                child: ListView.builder(
+                  // Pull-to-refresh works even when the list is short.
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  itemCount: count ?? 0,
+                  itemBuilder: (context, index) {
+                    if (window.itemAt(index) case final user?) {
+                      return UserTile(
+                        user: user,
+                        onTap: () =>
+                            UserAlbumsRoute(userId: user.id).go(context),
+                      );
+                    }
+                    final page = window.pageOf(index);
+                    void request() => bloc.add(UsersPageRequested(page));
+                    return window.hasFailed(page)
+                        ? _FailedUserRow(onRetry: request)
+                        : _PendingUserRow(onShown: request);
+                  },
+                ),
+              ),
+            },
           ),
         ],
       ),

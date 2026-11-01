@@ -53,11 +53,12 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     }
 
     emit(state.copyWith(status: UsersStatus.loading, failure: () => null));
+    final refresh = event is UsersLoadRequested && event.refresh;
     try {
       final first = await _repository.getUsersPage(
         PageRequest(index: 0, size: state.window.pageSize),
         query: query,
-        refresh: event is UsersLoadRequested && event.refresh,
+        refresh: refresh,
       );
       emit(
         state.copyWith(
@@ -67,6 +68,8 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
             first.items,
             total: first.total,
           ),
+          listQuery: query,
+          listRefreshed: refresh,
         ),
       );
     } on DataFailure catch (failure) {
@@ -96,12 +99,16 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
         window.isLoading(page)) {
       return;
     }
-    final query = state.query;
+    // The list on screen, not the query being typed: while a new search
+    // waits, its pages would not fit the rows shown. A refreshed list
+    // fetches its later pages fresh too, so they match its first page.
+    final query = state.listQuery;
     emit(state.copyWith(window: window.withLoading(page)));
     try {
       final result = await _repository.getUsersPage(
         PageRequest(index: page, size: window.pageSize),
         query: query,
+        refresh: state.listRefreshed,
       );
       if (!_stillWanted(page, query)) return;
       emit(
@@ -122,5 +129,5 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
   /// Whether an answer for [page] still belongs: the list wasn't searched,
   /// sorted or reloaded since it was asked for.
   bool _stillWanted(int page, UserQuery query) =>
-      state.query == query && state.window.isLoading(page);
+      state.listQuery == query && state.window.isLoading(page);
 }
