@@ -12,6 +12,7 @@ import 'package:axscend_tech_test/journeys/albums/screens/user_albums_screen.dar
 import 'package:axscend_tech_test/journeys/users/blocs/users_bloc.dart';
 import 'package:axscend_tech_test/journeys/users/screens/users_screen.dart';
 import 'package:domain/domain.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -136,6 +137,38 @@ void main() {
           (userId: 2, albumId: 3, photoId: 5),
         ]),
       );
+    });
+
+    testWidgets('swiping from the left edge goes back on iOS', (tester) async {
+      await open(tester, '/users/7/albums');
+      expect(find.byType(UserAlbumsScreen), findsOneWidget);
+
+      await tester.timedDragFrom(
+        const Offset(5, 300),
+        const Offset(500, 0),
+        const Duration(milliseconds: 300),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(UserAlbumsScreen), findsNothing);
+      expect(find.byType(UsersScreen), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a new page slides in rather than appearing at once', (
+      tester,
+    ) async {
+      final router = createAppRouter(initialLocation: '/users');
+      await tester.pumpWidget(App(router: router));
+      await tester.pumpAndSettle();
+
+      router.go('/users/7/albums');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // Mid-transition, both pages are on screen.
+      expect(find.byType(UsersScreen), findsOneWidget);
+      expect(find.byType(UserAlbumsScreen), findsOneWidget);
+      await tester.pumpAndSettle();
     });
 
     testWidgets('an id that is not a number is "page not found"', (
