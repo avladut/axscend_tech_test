@@ -1,0 +1,75 @@
+name: AI review
+
+# Advisory review by Alex's self-hosted model (tool/ai_review). It only
+# comments: each finding is a thread that Alex accepts or rejects, and branch
+# protection requires every thread to be resolved before merging. It is not a
+# required check and never approves, blocks or merges.
+
+on:
+  # Never `pull_request_target`: that would hand the secrets to fork PRs.
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# A new push to the same PR cancels the review that is now out of date.
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.2
+
+jobs:
+  review:
+    # Fork PRs get no secrets, so they're skipped (see the job below).
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Full history: the diff needs the merge base and earlier reviews.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The workspace includes Flutter packages, so resolving it needs Flutter.
+      - name: Set up Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      # PR data reaches the tool only through environment variables, never
+      # by being pasted into the command line.
+      - name: Review
+        env:
+          AI_REVIEW_BASE_URL: ${{ secrets.AI_REVIEW_BASE_URL }}
+          AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}
+          AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: dart run ai_review
+
+  fork-notice:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Explain the skip
+        run: echo "::notice::PRs from forks get no secrets, so there is no AI review."

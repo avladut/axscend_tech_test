@@ -11,8 +11,13 @@ workspace:
   - packages/app_ui
   - packages/domain
   - packages/jsonplaceholder_data
+  - tool/ai_review
 
 dev_dependencies:
+  # Lets `dart run ai_review` work from the repo root. Dev tooling only:
+  # the app never depends on it.
+  ai_review:
+    path: tool/ai_review
   # Pinned by pubspec.lock; a global `melos` switches to this version.
   melos: ^8.10.0
   very_good_analysis: ^11.0.0
