@@ -1,5 +1,8 @@
 import 'package:app_ui/app_ui.dart';
+import 'package:app_ui/testing.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/pump_app.dart';
@@ -260,38 +263,130 @@ void main() {
   });
 
   group(AppNetworkImage, () {
-    testWidgets('loads the link with a label for screen readers', (
-      tester,
-    ) async {
+    final url = Uri.parse('https://picsum.photos/seed/1/150');
+
+    // Decoded pictures stay in memory between tests; start each one empty.
+    tearDown(
+      () => PaintingBinding.instance.imageCache
+        ..clear()
+        ..clearLiveImages(),
+    );
+
+    Future<FakeImageCache> pumpImage(
+      WidgetTester tester, {
+      bool fail = false,
+      VoidCallback? onTap,
+    }) async {
+      final cache = FakeImageCache(fail: fail);
       await tester.pumpApp(
-        AppNetworkImage(
-          url: Uri.parse('https://picsum.photos/seed/1/150'),
-          semanticLabel: 'A photo',
+        AppImageCacheScope(
+          cache: cache,
+          child: SizedBox.square(
+            dimension: 150,
+            child: AppNetworkImage(
+              url: url,
+              semanticLabel: 'A photo',
+              onTap: onTap,
+            ),
+          ),
         ),
       );
+      return cache;
+    }
 
-      final image = tester.widget<Image>(find.byType(Image));
-      expect(image.semanticLabel, 'A photo');
-      expect(
-        (image.image as NetworkImage).url,
-        'https://picsum.photos/seed/1/150',
+    testWidgets('loads the picture through the device cache', (tester) async {
+      final cache = await pumpImage(tester);
+
+      expect(cache.requested, [url.toString()]);
+      expect(find.byIcon(Icons.image_outlined), findsOneWidget);
+    });
+
+    testWidgets('decodes the picture at the size it is shown', (tester) async {
+      await pumpImage(tester);
+
+      final image = tester.widget<CachedNetworkImage>(
+        find.byType(CachedNetworkImage),
       );
+      final pixelRatio = tester.view.devicePixelRatio;
+      expect(image.memCacheWidth, (150 * pixelRatio).round());
+    });
+
+    testWidgets('fills its box, tappable or not', (tester) async {
+      for (final onTap in [null, () {}]) {
+        await pumpImage(tester, onTap: onTap);
+
+        final image = tester.renderObject<RenderBox>(
+          find.byType(CachedNetworkImage),
+        );
+        expect(
+          image.constraints,
+          BoxConstraints.tight(const Size.square(150)),
+          reason: onTap == null ? 'not tappable' : 'tappable',
+        );
+      }
     });
 
     testWidgets('shows a broken-image icon when it fails', (tester) async {
-      // Tests have no network, so every image request fails.
-      await tester.pumpApp(
-        AppNetworkImage(
-          url: Uri.parse('https://picsum.photos/seed/1/150'),
-          semanticLabel: 'A photo',
-        ),
-      );
+      await pumpImage(tester, fail: true);
+      // The cache answers on real async, outside the test's fake clock.
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+    });
+
+    testWidgets('is an image for screen readers, and a button when tappable', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      var taps = 0;
+      await pumpImage(tester, onTap: () => taps++);
+
+      expect(
+        tester.getSemantics(find.byType(AppNetworkImage)),
+        matchesSemantics(
+          label: 'A photo',
+          isImage: true,
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      await tester.tap(find.byType(AppNetworkImage));
+      expect(taps, 1);
+      semantics.dispose();
+    });
+  });
+
+  group(AppImageCache, () {
+    test('keeps at most 500 pictures on disk, for 30 days', () {
+      expect(AppImageCache.maxImagesOnDisk, 500);
+      expect(AppImageCache.maxAge, const Duration(days: 30));
+    });
+
+    test('caps the decoded pictures kept in memory', () {
+      final cache = ImageCache();
+      AppImageCache.limitMemory(cache);
+
+      expect(cache.maximumSize, 200);
+      expect(cache.maximumSizeBytes, 50 * 1024 * 1024);
+    });
+
+    testWidgets('the disk cache is used unless a scope says otherwise', (
+      tester,
+    ) async {
+      late BaseCacheManager found;
+      await tester.pumpApp(
+        Builder(
+          builder: (context) {
+            found = AppImageCacheScope.of(context);
+            return const SizedBox();
+          },
+        ),
+      );
+
+      expect(found, same(AppImageCache.disk));
     });
   });
 

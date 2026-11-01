@@ -30,5 +30,6 @@ export 'src/foundation/app_radius.dart';
 export 'src/foundation/app_sizes.dart';
 export 'src/foundation/app_spacing.dart';
 export 'src/foundation/app_tone.dart';
+export 'src/images/app_image_cache.dart';
 export 'src/theme/app_theme.dart';
 export 'src/theme/theme_context.dart';
