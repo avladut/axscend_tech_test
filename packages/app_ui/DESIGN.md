@@ -78,6 +78,7 @@ Read them in widgets through `BuildContext`:
 | Component | Use it for |
 |---|---|
 | `AppListTile` | A row in a list. A tappable row gets a chevron unless it has its own `trailing`; `selected` marks the row open in the detail pane. |
+| `AppListTilePlaceholder` | Stands in for an `AppListTile` with an avatar and subtitle while its data loads, at the same height. Give it a `semanticLabel` ("Loading user"). Still, with no shimmer. |
 | `AppCard` | One item that needs a surface: a post, a comment. Tappable with `onTap`. |
 | `AppAvatar` | A person's initials (`sm`, `md`, `lg`). Same name, same colour. Decorative next to a name; give it a `semanticLabel` when it stands alone. |
 | `AppSectionHeader` | The title of a group, with an optional count tag and action (such as a sort button). |

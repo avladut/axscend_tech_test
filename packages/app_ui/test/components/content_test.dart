@@ -55,6 +55,56 @@ void main() {
     });
   });
 
+  group(AppListTilePlaceholder, () {
+    testWidgets('is as tall as the row it stands in for, at any text size', (
+      tester,
+    ) async {
+      for (final scale in [1.0, 2.0]) {
+        await tester.pumpApp(
+          MediaQuery.withClampedTextScaling(
+            minScaleFactor: scale,
+            maxScaleFactor: scale,
+            child: const Column(
+              children: [
+                AppListTile(
+                  title: 'Leanne Graham',
+                  subtitle: '@Bret',
+                  leading: AppAvatar(name: 'Leanne Graham'),
+                ),
+                AppListTilePlaceholder(),
+              ],
+            ),
+          ),
+        );
+
+        expect(
+          tester.getSize(find.byType(AppListTilePlaceholder)).height,
+          tester.getSize(find.byType(AppListTile)).height,
+          reason: 'text scale $scale',
+        );
+      }
+    });
+
+    testWidgets('is announced only with a label', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpApp(
+        const Column(
+          children: [
+            AppListTilePlaceholder(semanticLabel: 'Loading user'),
+            AppListTilePlaceholder(),
+          ],
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Loading user'), findsOneWidget);
+      expect(
+        tester.getSemantics(find.byType(AppListTilePlaceholder).last).label,
+        isEmpty,
+      );
+      semantics.dispose();
+    });
+  });
+
   group(AppAvatar, () {
     test('initialsOf takes the first and last words, skipping titles', () {
       expect(AppAvatar.initialsOf('Leanne Graham'), 'LG');
@@ -137,6 +187,21 @@ void main() {
         matchesSemantics(label: 'Posts', isHeader: true),
       );
       semantics.dispose();
+    });
+
+    testWidgets('puts the action at the far end of the row', (tester) async {
+      await tester.pumpApp(
+        const AppSectionHeader(
+          title: 'Posts',
+          count: 10,
+          trailing: Icon(Icons.sort),
+        ),
+        size: TestWindows.phone,
+      );
+
+      final header = tester.getTopRight(find.byType(AppSectionHeader));
+      final action = tester.getTopRight(find.byIcon(Icons.sort));
+      expect(action.dx, header.dx - AppInsets.section.right);
     });
 
     testWidgets('works without a count or an action', (tester) async {

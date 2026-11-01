@@ -24,12 +24,29 @@ class FakeJsonClient implements JsonClient {
   /// When set, every call throws it instead of answering.
   DataFailure? failure;
 
+  /// The query of every [getPage] call, in order.
+  final queries = <Map<String, String>>[];
+
+  /// What [getPage] reports as the whole list's length.
+  int? total;
+
   @override
   Future<Object?> get(String path, {bool refresh = false}) async {
     calls.add((path: path, refresh: refresh));
     if (failure case final failure?) throw failure;
     if (!answers.containsKey(path)) throw NotFoundFailure(detail: path);
     return answers[path];
+  }
+
+  /// Answers from [answers] by path, like [get], whatever the query.
+  @override
+  Future<JsonPage> getPage(
+    String path, {
+    Map<String, String> query = const {},
+    bool refresh = false,
+  }) async {
+    queries.add(query);
+    return (json: await get(path, refresh: refresh), total: total);
   }
 }
 

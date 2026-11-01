@@ -65,6 +65,55 @@ void main() {
       );
     });
 
+    group('getPage', () {
+      test('sends the query and reads the total from the header', () async {
+        final client = clientWith(
+          (_) async => http.Response(
+            '[{"id": 1}]',
+            200,
+            headers: {'x-total-count': '10'},
+          ),
+        );
+
+        final page = await client.getPage(
+          '/users',
+          query: {'_page': '2', 'q': 'rom ana'},
+        );
+
+        expect(page.json, [
+          {'id': 1},
+        ]);
+        expect(page.total, 10);
+        expect(
+          requests.single.url,
+          Uri.parse(
+            'https://jsonplaceholder.typicode.com/users?_page=2&q=rom+ana',
+          ),
+        );
+      });
+
+      test('has no total when the backend sends none', () async {
+        final client = clientWith((_) async => http.Response('[]', 200));
+
+        expect((await client.getPage('/users')).total, isNull);
+      });
+
+      test('fails like get, without the search in the detail', () async {
+        final client = clientWith((_) async => http.Response('', 500));
+
+        await expectLater(
+          client.getPage('/users', query: {'q': 'leanne'}),
+          throwsA(
+            isA<ServerFailure>().having(
+              (failure) => failure.detail,
+              'detail',
+              isNot(contains('leanne')),
+            ),
+          ),
+        );
+      });
+    });
+
     test('asks the backend every time, refresh or not', () async {
       final client = clientWith((_) async => http.Response('[]', 200));
 

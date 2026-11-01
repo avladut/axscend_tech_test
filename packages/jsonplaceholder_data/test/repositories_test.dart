@@ -43,6 +43,86 @@ void main() {
       expect(paths(), ['/users/1']);
     });
 
+    group('getUsersPage', () {
+      setUp(() => client.total = 10);
+
+      Future<Map<String, String>> queryFor(
+        UserQuery query, {
+        int index = 0,
+      }) async {
+        await users.getUsersPage(
+          PageRequest(index: index, size: 20),
+          query: query,
+        );
+        return client.queries.last;
+      }
+
+      test('reads one page, with the total of all pages', () async {
+        final page = await users.getUsersPage(
+          const PageRequest(index: 0, size: 20),
+        );
+
+        expect(page.items.first, leanne);
+        expect(page.items, hasLength(2));
+        expect(page.total, 10);
+        expect(paths(), ['/users']);
+      });
+
+      test('asks for the page by number, counted from 1', () async {
+        final query = await queryFor(const UserQuery(), index: 2);
+
+        expect(query, {
+          '_page': '3',
+          '_limit': '20',
+          '_sort': 'name',
+          '_order': 'asc',
+        });
+      });
+
+      test('lets the backend search, without the spaces around', () async {
+        final query = await queryFor(const UserQuery(text: ' rom '));
+
+        expect(query['q'], 'rom');
+      });
+
+      test('lets the backend sort, for every sort', () async {
+        final orders = {
+          for (final sort in UserSort.values)
+            sort: await queryFor(UserQuery(sort: sort)),
+        };
+
+        expect(
+          orders.map(
+            (sort, query) => MapEntry(sort, [query['_sort'], query['_order']]),
+          ),
+          {
+            UserSort.nameAscending: ['name', 'asc'],
+            UserSort.nameDescending: ['name', 'desc'],
+            UserSort.company: ['company.name', 'asc'],
+            UserSort.city: ['address.city', 'asc'],
+          },
+        );
+      });
+
+      test('passes refresh on', () async {
+        await users.getUsersPage(
+          const PageRequest(index: 0, size: 20),
+          refresh: true,
+        );
+
+        expect(client.calls.single.refresh, isTrue);
+      });
+
+      test('fails when the backend gives no total', () async {
+        client.total = null;
+
+        await expectLater(
+          users.getUsersPage(const PageRequest(index: 0, size: 20)),
+          throwsA(isA<UnexpectedDataFailure>()),
+        );
+      });
+    });
+
     test('passes refresh on', () async {
       await users.getUsers(refresh: true);
       await users.getUser(1, refresh: true);

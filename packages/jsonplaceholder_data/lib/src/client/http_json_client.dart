@@ -26,11 +26,35 @@ class HttpJsonClient implements JsonClient {
   /// Always asks the backend: there is no cache at this level, so `refresh`
   /// changes nothing.
   @override
-  Future<Object?> get(String path, {bool refresh = false}) async {
+  Future<Object?> get(String path, {bool refresh = false}) async =>
+      _decode(path, await _send(path));
+
+  /// Always asks the backend, like [get]. The total comes from the
+  /// `X-Total-Count` header, and is null when there is none.
+  @override
+  Future<JsonPage> getPage(
+    String path, {
+    Map<String, String> query = const {},
+    bool refresh = false,
+  }) async {
+    final response = await _send(path, query);
+    final total = int.tryParse(response.headers['x-total-count'] ?? '');
+    return (json: _decode(path, response), total: total);
+  }
+
+  /// GETs [path] with [query]. Failures only mention the path, because the
+  /// query can hold what the user searched for.
+  Future<http.Response> _send(
+    String path, [
+    Map<String, String> query = const {},
+  ]) async {
     final base = baseUrl.path.endsWith('/')
         ? baseUrl.path.substring(0, baseUrl.path.length - 1)
         : baseUrl.path;
-    final uri = baseUrl.replace(path: '$base$path');
+    final uri = baseUrl.replace(
+      path: '$base$path',
+      queryParameters: query.isEmpty ? null : query,
+    );
 
     final http.Response response;
     try {
@@ -55,6 +79,10 @@ class HttpJsonClient implements JsonClient {
     if (status < 200 || status >= 300) {
       throw ServerFailure(status, detail: 'GET $path');
     }
+    return response;
+  }
+
+  Object? _decode(String path, http.Response response) {
     try {
       return jsonDecode(response.body);
     } on FormatException {

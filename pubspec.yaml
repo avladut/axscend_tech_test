@@ -36,6 +36,11 @@ melos:
     check:analyze:
       description: Analyze every package. Infos and warnings fail the run.
       run: dart run melos analyze --no-pub
+    check:tokens:
+      description: >-
+        Fail if the app hard-codes a colour, text size, spacing or radius
+        instead of using app_ui's tokens.
+      run: apps/axscend_tech_test/tool/check_design_tokens.sh
     check:test:
       description: >-
         Run every package's tests, each writing its coverage to
@@ -65,5 +70,6 @@ melos:
       steps:
         - check:format
         - check:analyze
+        - check:tokens
         - check:test
         - check:coverage
