@@ -10,8 +10,8 @@
   - `app_ui` knows nothing about the domain or any backend.
   - `jsonplaceholder_data` depends on `domain` only.
   - In the app, only `lib/injector.dart` imports `jsonplaceholder_data`.
-  - `tool/ai_review` is dev tooling. Nothing in `apps/` or `packages/` may
-    depend on it.
+  - `tool/ai_review` and `tool/coverage_gate` are dev tooling. Nothing in
+    `apps/` or `packages/` may depend on them.
 - Cubits, screens, routes and injectors live in `apps/axscend_tech_test/lib/journeys/`.
 
 ## Workflow
@@ -28,7 +28,9 @@
 - Every task starts from a prompt Alex approved in
   `docs/ai/prompts/NN-short-name.md`. Don't start a task without one. Save
   Alex's own words verbatim; put your plan under "Agent plan".
-- Before opening a PR, `dart run melos run ci` must pass.
+- Before opening a PR, `dart run melos run ci` must pass. It includes the
+  tests and the coverage minimum: each package must cover at least 70% of its
+  lines, which CI's required `tests` check enforces.
 - Commits you write end with a `Co-Authored-By: Claude …` trailer.
 
 ## Reviews: Alex decides

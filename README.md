@@ -22,7 +22,8 @@ Install the dependencies for every package (one command, from the repo root):
 flutter pub get
 ```
 
-Run everything CI runs (format check, analyze, tests):
+Run everything CI runs (format check, analyze, tests with coverage, and the
+70% coverage minimum):
 
 ```bash
 dart run melos run ci
@@ -49,6 +50,7 @@ packages/app_ui/                Flutter: design tokens, theme, reusable widgets
 packages/domain/                Pure Dart: models, repository contracts, failures
 packages/jsonplaceholder_data/  Pure Dart: the JSONPlaceholder backend
 tool/ai_review/                 Dev tooling: the AI pull request reviewer
+tool/coverage_gate/             Dev tooling: the 70% coverage minimum
 docs/adr/                       Architecture decisions
 docs/ai/prompts/                The prompt behind each task
 ```
@@ -62,8 +64,12 @@ Which package may use which:
 
 ## How it's built
 
-- `main` is protected: changes arrive only through pull requests, and CI must
-  pass first.
+- `main` is protected: changes arrive only through pull requests, and two CI
+  checks must pass first:
+  - **checks:** formatting and the analyzer, with infos as errors;
+  - **tests:** every package's tests, and at least **70% line coverage per
+    package** ([tool/coverage_gate](tool/coverage_gate)). The coverage table
+    is on each run's summary page.
 - Each task starts from a prompt I write or approve, kept in
   [docs/ai/prompts](docs/ai/prompts).
 - **AI review, human decision.** Every PR is also reviewed by a second model

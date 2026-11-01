@@ -19,6 +19,7 @@ env:
   FLUTTER_VERSION: 3.47.2
 
 jobs:
+  # Format and analyze. Required on main.
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -46,5 +47,30 @@ jobs:
       - name: Analyze
         run: dart run melos run check:analyze
 
-      - name: Test
+  # Every package's tests must pass, and each package must cover at least
+  # 70% of its lines. Required on main.
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run the tests, with coverage
         run: dart run melos run check:test
+
+      # Writes the coverage table to this run's summary page.
+      - name: Coverage of at least 70% per package
+        run: dart run melos run check:coverage
