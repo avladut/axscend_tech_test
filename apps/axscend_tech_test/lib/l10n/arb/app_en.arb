@@ -67,5 +67,13 @@
       }
     }
   },
-  "usersNoMatchMessage": "Try a name, username, email, company or city."
+  "usersNoMatchMessage": "Try a name, username, email, company or city.",
+  "albumsTitle": "Albums",
+  "albumsLoading": "Loading albums…",
+  "albumsEmptyTitle": "No albums yet",
+  "photosTitle": "Photos",
+  "photosLoading": "Loading photos…",
+  "photosEmptyTitle": "No photos in this album",
+  "photoTitle": "Photo",
+  "photoLoading": "Loading photo…"
 }

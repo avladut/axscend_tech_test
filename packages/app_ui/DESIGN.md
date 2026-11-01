@@ -85,7 +85,7 @@ Read them in widgets through `BuildContext`:
 | `AppInfoRow` | A labelled value with an icon, such as an email. Tappable with `onTap`. |
 | `AppTag` | A count or status in a pill. The `AppTone` sets the colours. |
 | `AppCheckRow` | A todo: ticked, muted and struck through when done. Read-only. |
-| `AppNetworkImage` | A photo from the web, with a placeholder while loading and a broken-image icon on failure. Always needs a `semanticLabel`. |
+| `AppNetworkImage` | A photo from the web, with a placeholder while loading and a broken-image icon on failure. Kept on the device (see Pictures below) and decoded at the size shown. Always needs a `semanticLabel`; `onTap` makes it a button with a ripple. |
 | `AppProgressRing` | How much is done (0 to 1), with the percentage inside. |
 
 ### Controls
@@ -106,7 +106,22 @@ Both choice controls take `AppChoice(value:, label:)` options.
 | `AppStatusView.empty` | Nothing to show, such as no search results. |
 | `AppStatusView.error` | Something went wrong, with an `actionLabel` and `onAction` when trying again could help. |
 
-## 5. Do and don't
+## 5. Pictures
+
+Every `AppNetworkImage` loads through `AppImageCache`, so each picture is
+downloaded once:
+
+| Where | Limit |
+|---|---|
+| Disk | The last 500 pictures, each for up to 30 days. A picture seen before shows straight away, even offline. |
+| Memory | At most 200 decoded pictures and 50 MB, once the app calls `AppImageCache.limitMemory()` before `runApp`. |
+| Web | The browser's own cache. |
+
+Tests have no network or disk: wrap the screen in
+`AppImageCacheScope(cache: FakeImageCache(), …)` from
+`package:app_ui/testing.dart`.
+
+## 6. Do and don't
 
 - **Do** add a variant (an enum value or a named constructor) when a screen
   needs a new look. **Don't** pass raw colours or sizes into a component.

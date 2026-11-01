@@ -103,4 +103,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get usersNoMatchMessage =>
       'Try a name, username, email, company or city.';
+
+  @override
+  String get albumsTitle => 'Albums';
+
+  @override
+  String get albumsLoading => 'Loading albums…';
+
+  @override
+  String get albumsEmptyTitle => 'No albums yet';
+
+  @override
+  String get photosTitle => 'Photos';
+
+  @override
+  String get photosLoading => 'Loading photos…';
+
+  @override
+  String get photosEmptyTitle => 'No photos in this album';
+
+  @override
+  String get photoTitle => 'Photo';
+
+  @override
+  String get photoLoading => 'Loading photo…';
 }

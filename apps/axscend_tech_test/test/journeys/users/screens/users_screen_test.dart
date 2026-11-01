@@ -61,11 +61,13 @@ void main() {
     WidgetTester tester,
     UsersState state, {
     Size? size,
+    MockGoRouter? router,
   }) async {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpApp(
       BlocProvider<UsersBloc>.value(value: bloc, child: const UsersView()),
       size: size,
+      router: router,
     );
   }
 
@@ -106,6 +108,14 @@ void main() {
       final ervin = tester.getTopLeft(find.text('Ervin Howell'));
       final leanne = tester.getTopLeft(find.text('Leanne Graham'));
       expect(ervin.dy, lessThan(leanne.dy));
+    });
+
+    testWidgets('tapping a user opens their albums', (tester) async {
+      final router = MockGoRouter();
+      await pumpView(tester, loaded, router: router);
+
+      await tester.tap(find.text('Leanne Graham'));
+      verify(() => router.go('/users/2/albums')).called(1);
     });
 
     testWidgets('keeps the list while a new list loads', (tester) async {

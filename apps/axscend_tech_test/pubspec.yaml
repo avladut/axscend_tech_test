@@ -28,6 +28,7 @@ dependencies:
   # Only lib/injector.dart may import this package (see docs/adr/0001).
   jsonplaceholder_data:
     path: ../../packages/jsonplaceholder_data
+  meta: ^1.19.0
 
 dev_dependencies:
   bloc_test: ^10.0.0

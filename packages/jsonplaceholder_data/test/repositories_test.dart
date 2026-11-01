@@ -19,6 +19,7 @@ void main() {
       '/users/1/albums': fixture('albums'),
       '/albums/1': fixtureItem('albums'),
       '/albums/1/photos': fixture('photos'),
+      '/photos/1': fixtureItem('photos'),
       '/todos': fixture('todos'),
       '/users/1/todos': fixture('todos'),
     });
@@ -198,10 +199,19 @@ void main() {
       expect(paths(), ['/albums/1', '/albums/1/photos']);
     });
 
+    test('reads one photo', () async {
+      final photo = await albums.getPhoto(1);
+
+      expect(photo.id, 1);
+      expect(photo.url, Uri.parse('https://picsum.photos/seed/1/600'));
+      expect(paths(), ['/photos/1']);
+    });
+
     test('passes refresh on', () async {
       await albums.getAlbums(refresh: true);
       await albums.getAlbum(1, refresh: true);
       await albums.getPhotos(1, refresh: true);
+      await albums.getPhoto(1, refresh: true);
 
       expect(client.calls.every((call) => call.refresh), isTrue);
     });
