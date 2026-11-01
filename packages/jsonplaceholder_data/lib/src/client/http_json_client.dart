@@ -26,20 +26,28 @@ class HttpJsonClient implements JsonClient {
   /// Always asks the backend: there is no cache at this level, so `refresh`
   /// changes nothing.
   @override
-  Future<Object?> get(String path, {bool refresh = false}) async =>
-      _decode(path, await _send(path));
+  Future<T> get<T>(
+    String path, {
+    T Function(Object? json)? parse,
+    bool refresh = false,
+  }) =>
+      _send(path).then((response) => parseWith(_decode(path, response), parse));
 
   /// Always asks the backend, like [get]. The total comes from the
-  /// `X-Total-Count` header, and is null when there is none.
+  /// `X-Total-Count` header.
   @override
-  Future<JsonPage> getPage(
+  Future<JsonPage<T>> getPage<T>(
     String path, {
     Map<String, String> query = const {},
+    T Function(Object? json)? parse,
     bool refresh = false,
   }) async {
     final response = await _send(path, query);
     final total = int.tryParse(response.headers['x-total-count'] ?? '');
-    return (json: _decode(path, response), total: total);
+    if (total == null) {
+      throw UnexpectedDataFailure(detail: 'GET $path: no X-Total-Count');
+    }
+    return (json: parseWith(_decode(path, response), parse), total: total);
   }
 
   /// GETs [path] with [query]. Failures only mention the path, because the
