@@ -8,7 +8,7 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
   initialLocation: initialLocation,
   routes: $appRoutes,
   redirect: (context, state) => appRedirect(state.uri.path),
-  errorBuilder: (context, state) => const NotFoundScreen(),
+  errorPageBuilder: (context, state) => appPage(state, const NotFoundScreen()),
 );
 
 /// Where to send [path] instead, or null to stay. The only place that

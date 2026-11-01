@@ -2,10 +2,19 @@ import 'package:axscend_tech_test/journeys/albums/screens/album_photos_screen.da
 import 'package:axscend_tech_test/journeys/albums/screens/photo_screen.dart';
 import 'package:axscend_tech_test/journeys/albums/screens/user_albums_screen.dart';
 import 'package:axscend_tech_test/journeys/users/screens/users_screen.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 part 'routes.g.dart';
+
+/// Every page is a [MaterialPage], so it gets the platform's transition,
+/// and on iOS the swipe from the left edge to go back. Left to choose,
+/// go_router 18 used a page with no transition and no swipe here.
+MaterialPage<void> appPage(GoRouterState state, Widget child) => MaterialPage(
+  key: state.pageKey,
+  name: state.name ?? state.path,
+  child: child,
+);
 
 /// The start page: everyone in the directory. A user's albums, an album's
 /// photos and one photo open on top of it, so back returns to where you
@@ -33,8 +42,8 @@ class UsersRoute extends GoRouteData with $UsersRoute {
   const new();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const UsersScreen();
+  Page<void> buildPage(BuildContext context, GoRouterState state) =>
+      appPage(state, const UsersScreen());
 }
 
 /// A user's albums.
@@ -45,8 +54,8 @@ class UserAlbumsRoute extends GoRouteData with $UserAlbumsRoute {
   final int userId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      UserAlbumsScreen(key: ValueKey(userId), userId: userId);
+  Page<void> buildPage(BuildContext context, GoRouterState state) =>
+      appPage(state, UserAlbumsScreen(key: ValueKey(userId), userId: userId));
 }
 
 /// An album's photos.
@@ -58,9 +67,12 @@ class AlbumPhotosRoute extends GoRouteData with $AlbumPhotosRoute {
   final int albumId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
     final address = (userId: userId, albumId: albumId);
-    return AlbumPhotosScreen(key: ValueKey(address), address: address);
+    return appPage(
+      state,
+      AlbumPhotosScreen(key: ValueKey(address), address: address),
+    );
   }
 }
 
@@ -78,8 +90,11 @@ class PhotoRoute extends GoRouteData with $PhotoRoute {
   final int photoId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
     final address = (userId: userId, albumId: albumId, photoId: photoId);
-    return PhotoScreen(key: ValueKey(address), address: address);
+    return appPage(
+      state,
+      PhotoScreen(key: ValueKey(address), address: address),
+    );
   }
 }
