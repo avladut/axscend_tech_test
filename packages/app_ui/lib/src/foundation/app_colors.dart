@@ -10,9 +10,11 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.success,
     required this.onSuccess,
     required this.successContainer,
+    required this.onSuccessContainer,
     required this.warning,
     required this.onWarning,
     required this.warningContainer,
+    required this.onWarningContainer,
     required this.muted,
   });
 
@@ -27,13 +29,17 @@ class AppColors extends ThemeExtension<AppColors> {
       seedColor: brand.warning,
       brightness: scheme.brightness,
     );
+    // The on- colours come from the same tonal palettes as their
+    // backgrounds, so text stays readable (4.5:1 or more) for any brand.
     return AppColors(
       success: dark ? success.primary : brand.success,
-      onSuccess: dark ? success.onPrimary : Colors.white,
+      onSuccess: success.onPrimary,
       successContainer: success.primaryContainer,
+      onSuccessContainer: success.onPrimaryContainer,
       warning: dark ? warning.primary : brand.warning,
-      onWarning: dark ? warning.onPrimary : Colors.white,
+      onWarning: warning.onPrimary,
       warningContainer: warning.primaryContainer,
+      onWarningContainer: warning.onPrimaryContainer,
       muted: scheme.onSurfaceVariant,
     );
   }
@@ -41,9 +47,16 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color success;
   final Color onSuccess;
   final Color successContainer;
+
+  /// Text and icons on [successContainer], such as a "Done" tag.
+  final Color onSuccessContainer;
+
   final Color warning;
   final Color onWarning;
   final Color warningContainer;
+
+  /// Text and icons on [warningContainer], such as a "Pending" tag.
+  final Color onWarningContainer;
 
   /// Secondary text: subtitles, captions, counts.
   final Color muted;
@@ -53,17 +66,21 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? success,
     Color? onSuccess,
     Color? successContainer,
+    Color? onSuccessContainer,
     Color? warning,
     Color? onWarning,
     Color? warningContainer,
+    Color? onWarningContainer,
     Color? muted,
   }) => AppColors(
     success: success ?? this.success,
     onSuccess: onSuccess ?? this.onSuccess,
     successContainer: successContainer ?? this.successContainer,
+    onSuccessContainer: onSuccessContainer ?? this.onSuccessContainer,
     warning: warning ?? this.warning,
     onWarning: onWarning ?? this.onWarning,
     warningContainer: warningContainer ?? this.warningContainer,
+    onWarningContainer: onWarningContainer ?? this.onWarningContainer,
     muted: muted ?? this.muted,
   );
 
@@ -78,11 +95,21 @@ class AppColors extends ThemeExtension<AppColors> {
         other.successContainer,
         t,
       )!,
+      onSuccessContainer: Color.lerp(
+        onSuccessContainer,
+        other.onSuccessContainer,
+        t,
+      )!,
       warning: Color.lerp(warning, other.warning, t)!,
       onWarning: Color.lerp(onWarning, other.onWarning, t)!,
       warningContainer: Color.lerp(
         warningContainer,
         other.warningContainer,
+        t,
+      )!,
+      onWarningContainer: Color.lerp(
+        onWarningContainer,
+        other.onWarningContainer,
         t,
       )!,
       muted: Color.lerp(muted, other.muted, t)!,

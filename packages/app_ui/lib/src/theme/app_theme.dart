@@ -69,6 +69,12 @@ abstract final class AppTheme {
           borderRadius: AppRadius.borderLg,
           borderSide: BorderSide.none,
         ),
+        // Without it a focused field looks unfocused, and keyboard users
+        // can't see where they are (WCAG 2.4.7).
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.borderLg,
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainer,

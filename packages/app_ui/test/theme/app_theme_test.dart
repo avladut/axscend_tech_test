@@ -51,6 +51,15 @@ void main() {
     });
   });
 
+  test('a focused text field gets a primary border', () {
+    final theme = AppTheme.light(testBrand);
+    final focused =
+        theme.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
+
+    expect(focused.borderSide.color, theme.colorScheme.primary);
+    expect(focused.borderSide.width, 2);
+  });
+
   group(AppColors, () {
     final light = AppColors.from(
       AppTheme.light(testBrand).colorScheme,
