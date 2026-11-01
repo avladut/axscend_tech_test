@@ -75,5 +75,103 @@
   "photosLoading": "Loading photos…",
   "photosEmptyTitle": "No photos in this album",
   "photoTitle": "Photo",
-  "photoLoading": "Loading photo…"
+  "photoLoading": "Loading photo…",
+  "profileTitle": "Profile",
+  "profileLoading": "Loading profile…",
+  "profileContact": "Contact",
+  "profileEmail": "Email",
+  "profilePhone": "Phone",
+  "profileWebsite": "Website",
+  "profileAddress": "Address",
+  "profileAddressLine": "{street}, {suite}, {city} {zipcode}",
+  "@profileAddressLine": {
+    "description": "A user's address on one line.",
+    "placeholders": {
+      "street": {
+        "type": "String"
+      },
+      "suite": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      },
+      "zipcode": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCompany": "Company",
+  "profileCatchPhrase": "Catchphrase",
+  "profileActivity": "Activity",
+  "profilePosts": "Posts",
+  "profilePostsCount": "{count, plural, =0{No posts} =1{1 post} other{{count} posts}}",
+  "@profilePostsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileAlbums": "Albums",
+  "profileAlbumsCount": "{count, plural, =0{No albums} =1{1 album} other{{count} albums}}",
+  "@profileAlbumsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileTodos": "Todos",
+  "postsTitle": "Posts",
+  "postsLoading": "Loading posts…",
+  "postsEmptyTitle": "No posts yet",
+  "postTitle": "Post",
+  "postLoading": "Loading post…",
+  "commentsHeader": "Comments",
+  "commentsEmptyTitle": "No comments yet",
+  "todosTitle": "Todos",
+  "todosLoading": "Loading todos…",
+  "todosEmptyTitle": "No todos yet",
+  "todosNoneDoneTitle": "Nothing done yet",
+  "todosNonePendingTitle": "All done",
+  "todosDoneCount": "{done} of {total} done",
+  "@todosDoneCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todosProgressLabel": "Todos done",
+  "@todosProgressLabel": {
+    "description": "Read out by screen readers for the progress ring."
+  },
+  "todosFilterAll": "All ({count})",
+  "@todosFilterAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todosFilterDone": "Done ({count})",
+  "@todosFilterDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todosFilterPending": "Pending ({count})",
+  "@todosFilterPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

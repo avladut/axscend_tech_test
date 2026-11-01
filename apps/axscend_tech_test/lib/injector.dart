@@ -1,4 +1,6 @@
 import 'package:axscend_tech_test/journeys/albums/albums_injector.dart';
+import 'package:axscend_tech_test/journeys/posts/posts_injector.dart';
+import 'package:axscend_tech_test/journeys/todos/todos_injector.dart';
 import 'package:axscend_tech_test/journeys/users/users_injector.dart';
 import 'package:domain/domain.dart';
 import 'package:get_it/get_it.dart';
@@ -31,4 +33,6 @@ void configureDependencies() {
     );
   UsersInjector.init();
   AlbumsInjector.init();
+  PostsInjector.init();
+  TodosInjector.init();
 }

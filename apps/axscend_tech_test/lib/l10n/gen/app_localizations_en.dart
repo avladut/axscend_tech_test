@@ -127,4 +127,136 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photoLoading => 'Loading photo…';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileLoading => 'Loading profile…';
+
+  @override
+  String get profileContact => 'Contact';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profilePhone => 'Phone';
+
+  @override
+  String get profileWebsite => 'Website';
+
+  @override
+  String get profileAddress => 'Address';
+
+  @override
+  String profileAddressLine(
+    String street,
+    String suite,
+    String city,
+    String zipcode,
+  ) {
+    return '$street, $suite, $city $zipcode';
+  }
+
+  @override
+  String get profileCompany => 'Company';
+
+  @override
+  String get profileCatchPhrase => 'Catchphrase';
+
+  @override
+  String get profileActivity => 'Activity';
+
+  @override
+  String get profilePosts => 'Posts';
+
+  @override
+  String profilePostsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts',
+      one: '1 post',
+      zero: 'No posts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get profileAlbums => 'Albums';
+
+  @override
+  String profileAlbumsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count albums',
+      one: '1 album',
+      zero: 'No albums',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get profileTodos => 'Todos';
+
+  @override
+  String get postsTitle => 'Posts';
+
+  @override
+  String get postsLoading => 'Loading posts…';
+
+  @override
+  String get postsEmptyTitle => 'No posts yet';
+
+  @override
+  String get postTitle => 'Post';
+
+  @override
+  String get postLoading => 'Loading post…';
+
+  @override
+  String get commentsHeader => 'Comments';
+
+  @override
+  String get commentsEmptyTitle => 'No comments yet';
+
+  @override
+  String get todosTitle => 'Todos';
+
+  @override
+  String get todosLoading => 'Loading todos…';
+
+  @override
+  String get todosEmptyTitle => 'No todos yet';
+
+  @override
+  String get todosNoneDoneTitle => 'Nothing done yet';
+
+  @override
+  String get todosNonePendingTitle => 'All done';
+
+  @override
+  String todosDoneCount(int done, int total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String get todosProgressLabel => 'Todos done';
+
+  @override
+  String todosFilterAll(int count) {
+    return 'All ($count)';
+  }
+
+  @override
+  String todosFilterDone(int count) {
+    return 'Done ($count)';
+  }
+
+  @override
+  String todosFilterPending(int count) {
+    return 'Pending ($count)';
+  }
 }

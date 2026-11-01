@@ -315,6 +315,209 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading photo…'**
   String get photoLoading;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @profileLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile…'**
+  String get profileLoading;
+
+  /// No description provided for @profileContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get profileContact;
+
+  /// No description provided for @profileEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get profileEmail;
+
+  /// No description provided for @profilePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get profilePhone;
+
+  /// No description provided for @profileWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get profileWebsite;
+
+  /// No description provided for @profileAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get profileAddress;
+
+  /// A user's address on one line.
+  ///
+  /// In en, this message translates to:
+  /// **'{street}, {suite}, {city} {zipcode}'**
+  String profileAddressLine(
+    String street,
+    String suite,
+    String city,
+    String zipcode,
+  );
+
+  /// No description provided for @profileCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get profileCompany;
+
+  /// No description provided for @profileCatchPhrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Catchphrase'**
+  String get profileCatchPhrase;
+
+  /// No description provided for @profileActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get profileActivity;
+
+  /// No description provided for @profilePosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get profilePosts;
+
+  /// No description provided for @profilePostsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No posts} =1{1 post} other{{count} posts}}'**
+  String profilePostsCount(int count);
+
+  /// No description provided for @profileAlbums.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get profileAlbums;
+
+  /// No description provided for @profileAlbumsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No albums} =1{1 album} other{{count} albums}}'**
+  String profileAlbumsCount(int count);
+
+  /// No description provided for @profileTodos.
+  ///
+  /// In en, this message translates to:
+  /// **'Todos'**
+  String get profileTodos;
+
+  /// No description provided for @postsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get postsTitle;
+
+  /// No description provided for @postsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading posts…'**
+  String get postsLoading;
+
+  /// No description provided for @postsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get postsEmptyTitle;
+
+  /// No description provided for @postTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get postTitle;
+
+  /// No description provided for @postLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading post…'**
+  String get postLoading;
+
+  /// No description provided for @commentsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get commentsHeader;
+
+  /// No description provided for @commentsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet'**
+  String get commentsEmptyTitle;
+
+  /// No description provided for @todosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Todos'**
+  String get todosTitle;
+
+  /// No description provided for @todosLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading todos…'**
+  String get todosLoading;
+
+  /// No description provided for @todosEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No todos yet'**
+  String get todosEmptyTitle;
+
+  /// No description provided for @todosNoneDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing done yet'**
+  String get todosNoneDoneTitle;
+
+  /// No description provided for @todosNonePendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All done'**
+  String get todosNonePendingTitle;
+
+  /// No description provided for @todosDoneCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} done'**
+  String todosDoneCount(int done, int total);
+
+  /// Read out by screen readers for the progress ring.
+  ///
+  /// In en, this message translates to:
+  /// **'Todos done'**
+  String get todosProgressLabel;
+
+  /// No description provided for @todosFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All ({count})'**
+  String todosFilterAll(int count);
+
+  /// No description provided for @todosFilterDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done ({count})'**
+  String todosFilterDone(int count);
+
+  /// No description provided for @todosFilterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending ({count})'**
+  String todosFilterPending(int count);
 }
 
 class _AppLocalizationsDelegate
