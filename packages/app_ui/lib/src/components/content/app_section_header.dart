@@ -23,17 +23,25 @@ class AppSectionHeader extends StatelessWidget {
       padding: AppInsets.section,
       child: Row(
         children: [
-          Flexible(
-            child: Semantics(
-              header: true,
-              child: Text(title, style: context.textStyles.titleMedium),
+          // Takes all the room the action doesn't, so the action sits at
+          // the far end.
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Semantics(
+                    header: true,
+                    child: Text(title, style: context.textStyles.titleMedium),
+                  ),
+                ),
+                if (count != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  AppTag(label: '$count'),
+                ],
+              ],
             ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            AppTag(label: '$count'),
-          ],
-          if (trailing != null) ...[const Spacer(), trailing],
+          ?trailing,
         ],
       ),
     );

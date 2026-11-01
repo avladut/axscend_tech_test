@@ -11,6 +11,7 @@ export 'src/components/content/app_card.dart';
 export 'src/components/content/app_check_row.dart';
 export 'src/components/content/app_info_row.dart';
 export 'src/components/content/app_list_tile.dart';
+export 'src/components/content/app_list_tile_placeholder.dart';
 export 'src/components/content/app_network_image.dart';
 export 'src/components/content/app_progress_ring.dart';
 export 'src/components/content/app_section_header.dart';
