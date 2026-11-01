@@ -71,6 +71,29 @@ Fix the eleven issues below, each with a test that fails without its fix.
     reviewer and its prompt, so a PR could weaken its own review. The job
     now runs main's copy and only reads the PR's commits as data.
 
+**Found while testing,** after Alex asked:
+
+> test the app
+
+The web build at phone and tablet widths, in light and dark, and the iPhone
+simulator. Almost everything passed. Two real bugs turned up, and Alex
+answered "Yes, fix both":
+
+12. **No page transitions, and no swipe-back on iPhone.** go_router 18
+    didn't recognise the `MaterialApp.router` as a Material app, even a
+    bare one in a test. It fell back to `NoTransitionPage`, which has no
+    transition and no iOS edge swipe. A widget test showed it isn't the
+    simulator: dragging from the left edge on iOS didn't go back. Each
+    route now builds its page as a `MaterialPage` itself, and so does the
+    "page not found" page. New tests check the swipe on iOS and the slide
+    in on a new page.
+13. **The search field was autocorrected.** On iOS, typing "erv" offered
+    "etc". A name could be rewritten while you type. The field now has
+    autocorrect and suggestions off.
+
+Also seen, and not a bug: the backend's search covers every field, so "erv"
+also finds two users whose company catchphrases contain "client-server".
+
 ## Out of scope
 
 These go on the list for after submission:
