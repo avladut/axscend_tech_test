@@ -105,6 +105,45 @@ void main() {
       });
     });
 
+    group('getPage', () {
+      setUp(() => backend.total = 2);
+
+      test('saves each query separately, whatever its order', () async {
+        await client.getPage('/users', query: {'_page': '1', '_limit': '20'});
+        final again = await client.getPage(
+          '/users',
+          query: {'_limit': '20', '_page': '1'},
+        );
+        await client.getPage('/users', query: {'_page': '2', '_limit': '20'});
+
+        expect(again.json, ['first answer']);
+        expect(again.total, 2);
+        expect(backend.queries, hasLength(2));
+      });
+
+      test('keeps pages apart from a plain get of the path', () async {
+        await client.getPage('/users');
+        await client.get('/users');
+
+        expect(backend.calls, hasLength(2));
+      });
+
+      test('uses the last good page, with its total, when offline', () async {
+        await client.getPage('/users', query: {'_page': '1'});
+        backend
+          ..total = 99
+          ..failure = const OfflineFailure();
+
+        final page = await client.getPage(
+          '/users',
+          query: {'_page': '1'},
+          refresh: true,
+        );
+        expect(page.json, ['first answer']);
+        expect(page.total, 2);
+      });
+    });
+
     test(
       'works with any ResponseStore, so a persistent one can plug in',
       () async {

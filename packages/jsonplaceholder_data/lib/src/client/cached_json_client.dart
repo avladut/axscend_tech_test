@@ -19,19 +19,46 @@ class CachedJsonClient implements JsonClient {
   final ResponseStore _store;
 
   @override
-  Future<Object?> get(String path, {bool refresh = false}) async {
+  Future<Object?> get(String path, {bool refresh = false}) =>
+      _cached(path, refresh, () => _inner.get(path, refresh: refresh));
+
+  /// Cached like [get]: each query is saved separately, with its total.
+  @override
+  Future<JsonPage> getPage(
+    String path, {
+    Map<String, String> query = const {},
+    bool refresh = false,
+  }) async {
+    // Sorted, so the same query always finds the same entry. The prefix
+    // keeps it apart from a plain get of the same path.
+    final entries = query.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final sorted = Uri(queryParameters: Map.fromEntries(entries)).query;
+    final saved = await _cached('page:$path?$sorted', refresh, () async {
+      final page = await _inner.getPage(path, query: query, refresh: refresh);
+      return {'json': page.json, 'total': page.total};
+    });
+    final answer = saved! as Map<String, Object?>;
+    return (json: answer['json'], total: answer['total'] as int?);
+  }
+
+  Future<Object?> _cached(
+    String key,
+    bool refresh,
+    Future<Object?> Function() fetch,
+  ) async {
     if (!refresh) {
-      final saved = await _store.read(path);
+      final saved = await _store.read(key);
       if (saved != null) return saved;
     }
     try {
-      final fresh = await _inner.get(path, refresh: refresh);
-      if (fresh != null) await _store.write(path, fresh);
+      final fresh = await fetch();
+      if (fresh != null) await _store.write(key, fresh);
       return fresh;
     } on DataFailure catch (failure) {
       // "Not found" and bad data are real answers. Old data would hide them.
       final canFallBack = failure is OfflineFailure || failure is ServerFailure;
-      final saved = canFallBack ? await _store.read(path) : null;
+      final saved = canFallBack ? await _store.read(key) : null;
       if (saved == null) rethrow;
       return saved;
     }
