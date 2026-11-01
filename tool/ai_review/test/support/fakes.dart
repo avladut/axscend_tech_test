@@ -61,10 +61,20 @@ http.StreamedResponse sseResponse(
 }
 
 class FakeDiffSource implements DiffSource {
-  new({this.headSha = shaB, this.files = const [], this.ancestors = const {}});
+  new({
+    this.headSha = shaB,
+    this.files = const [],
+    this.ancestors = const {},
+    List<FileDiff>? rangeFiles,
+  }) : rangeFiles = rangeFiles ?? files;
 
   final String headSha;
+
+  /// What the whole pull request changes.
   final List<FileDiff> files;
+
+  /// What the commits in a range change. Defaults to [files].
+  final List<FileDiff> rangeFiles;
 
   /// Pairs `ancestor..descendant` that count as ancestry.
   final Set<String> ancestors;
@@ -93,7 +103,7 @@ class FakeDiffSource implements DiffSource {
     required String to,
   }) async {
     calls.add('range $from..$to');
-    return files;
+    return rangeFiles;
   }
 }
 

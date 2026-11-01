@@ -34,6 +34,24 @@ wrote:
 > now, add the changes to the pipeline regarding test coverage to the project
 > as a pr
 
+### A CI failure fixed on the way
+
+After PR #3 merged, Claude merged `main` into this branch. The AI review of
+that push failed, and Alex pasted the error:
+
+> GitHub POST /repos/avladut/axscend_tech_test/pulls/4/comments failed with
+> HTTP 422: Validation Failed
+
+The review was incremental: "only the commits after the last review". That
+range was the merge itself, so it held task 03's 25 files, which aren't part
+of this PR. GitHub refused a comment on one of them, and the tool stopped.
+CLAUDE.md says CI failures are fixed straight away, so this PR also fixes
+`tool/ai_review`:
+
+- an incremental review keeps only the files the PR itself changes;
+- if GitHub still refuses a file, the finding goes in the PR conversation
+  instead of failing the run.
+
 ## Goal
 
 Every PR shows its own **tests** check. It runs every package's tests with

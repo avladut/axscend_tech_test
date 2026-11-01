@@ -250,6 +250,29 @@ void main() {
         },
       );
 
+      test(
+        'puts a finding in the conversation when GitHub refuses its file',
+        () async {
+          final publisher = publisherWith((request) {
+            if (request.url.path.endsWith('/pulls/7/comments')) {
+              return http.Response('{"message": "Validation Failed"}', 422);
+            }
+            return http.Response('{}', 201);
+          });
+
+          await publisher.publish(report, [onFile]);
+
+          final paths = requests.map((r) => r.url.path).toList();
+          expect(
+            paths.last,
+            '/repos/avladut/axscend_tech_test/issues/7/comments',
+          );
+          final body = bodyOf(requests.last)['body']! as String;
+          expect(body, contains('About `lib/a.dart`'));
+          expect(body, contains('On the file'));
+        },
+      );
+
       test('reports a failed post as a PublishException', () async {
         final publisher = publisherWith(
           (_) => throw http.ClientException('Connection reset'),

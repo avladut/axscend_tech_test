@@ -100,12 +100,23 @@ class GitHubPublisher implements ReviewPublisher {
       onFiles.insertAll(0, onLines);
     }
     for (final comment in onFiles) {
-      await _post('$_pullPath/comments', {
-        'commit_id': headSha,
-        'path': comment.path,
-        'subject_type': 'file',
-        'body': _formatter.commentBody(comment, model: report.model),
-      });
+      final body = _formatter.commentBody(comment, model: report.model);
+      try {
+        await _post('$_pullPath/comments', {
+          'commit_id': headSha,
+          'path': comment.path,
+          'subject_type': 'file',
+          'body': body,
+        }, recoverable: true);
+      } on _Unprocessable {
+        // GitHub refused the file, most likely because it isn't in the PR's
+        // diff. The finding goes in the conversation instead of being lost.
+        await _post('/repos/$repository/issues/$pullNumber/comments', {
+          'body':
+              "_About `${comment.path}`, which GitHub won't let the bot "
+              'comment on directly._\n\n$body',
+        });
+      }
     }
   }
 
@@ -151,7 +162,7 @@ class GitHubPublisher implements ReviewPublisher {
           'body': _formatter.commentBody(comment, model: model),
         },
     ],
-  }, hasLineThreads: onLines.isNotEmpty);
+  }, recoverable: onLines.isNotEmpty);
 
   Map<String, String> get _headers => {
     'Authorization': 'Bearer $_token',
@@ -197,12 +208,12 @@ class GitHubPublisher implements ReviewPublisher {
     }
   }
 
-  /// [hasLineThreads]: a 422 then most likely means a line position GitHub
-  /// won't accept, which [publish] can recover from.
+  /// [recoverable]: a 422 then means GitHub refused where a comment goes (a
+  /// line or file outside the diff), which [publish] can recover from.
   Future<void> _post(
     String path,
     Map<String, Object?> json, {
-    bool hasLineThreads = false,
+    bool recoverable = false,
   }) async {
     final response = await _send(
       'POST',
@@ -213,7 +224,7 @@ class GitHubPublisher implements ReviewPublisher {
         body: jsonEncode(json),
       ),
     );
-    if (response.statusCode == 422 && hasLineThreads) {
+    if (response.statusCode == 422 && recoverable) {
       throw const _Unprocessable();
     }
     _check('POST', path, response);
