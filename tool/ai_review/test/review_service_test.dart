@@ -16,6 +16,7 @@ void main() {
       List<FileDiff>? rangeFiles,
       Set<String> ancestors = const {},
       FakeModel? withModel,
+      DiffFilter filter = const DiffFilter(),
     }) {
       model = withModel ?? FakeModel();
       publisher = RecordingPublisher(lastSha: lastSha);
@@ -30,9 +31,20 @@ void main() {
         model: model,
         publisher: publisher,
         prompts: const PromptBuilder(systemTemplate: 'system'),
+        filter: filter,
         log: log.add,
       );
     }
+
+    // Two files of 525 characters and a 600-character budget: two parts.
+    final twoFiles = [
+      addedFile('lib/a.dart', count: 10, width: 41),
+      addedFile('lib/b.dart', count: 10, width: 41),
+    ];
+    const smallParts = DiffFilter(maxChars: 600);
+    String answer(String severity, String file, String title) =>
+        '{"summary": "About $file.", "findings": [{"severity": "$severity", '
+        '"file": "$file", "line": 2, "title": "$title", "detail": "d"}]}';
 
     test('reviews the whole PR the first time', () async {
       final outcome = await service().run(base: 'main', head: 'HEAD');
@@ -195,6 +207,88 @@ void main() {
       final comment = publisher.comments!.single;
       expect(comment.placement, Placement.line);
       expect(comment.line, 2);
+    });
+
+    group('a large PR', () {
+      test('is reviewed in parts and posted as one review', () async {
+        final outcome = await service(
+          files: twoFiles,
+          filter: smallParts,
+          withModel: FakeModel(
+            answers: [
+              answer('minor', 'lib/a.dart', 'In part one'),
+              answer('major', 'lib/b.dart', 'In part two'),
+            ],
+          ),
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(outcome, ReviewOutcome.published);
+        expect(model.calls, 2);
+        expect(model.users[0], contains('This is part 1.'));
+        expect(model.users[0], contains('<<<FILE lib/a.dart'));
+        expect(model.users[0], isNot(contains('<<<FILE lib/b.dart')));
+        expect(model.users[1], contains('<<<FILE lib/b.dart'));
+
+        final report = publisher.report!;
+        final review = report.review as StructuredReview;
+        expect(review.findings.map((f) => f.title), [
+          'In part two',
+          'In part one',
+        ]);
+        expect(review.summary, contains('**Part 2:** About lib/b.dart.'));
+        expect(report.promptTokens, 200);
+        expect(report.unanswered, isEmpty);
+        expect(publisher.comments, hasLength(2));
+        expect(log.join('\n'), contains('Sending part 2 of 2'));
+      });
+
+      test('still posts the parts that worked when one fails', () async {
+        final outcome = await service(
+          files: twoFiles,
+          filter: smallParts,
+          withModel: FakeModel(
+            answers: [
+              answer('minor', 'lib/a.dart', 'In part one'),
+              const ReviewModelException('timed out'),
+            ],
+          ),
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(outcome, ReviewOutcome.published);
+        expect(publisher.report!.unanswered, ['lib/b.dart']);
+        expect(publisher.unavailableReason, isNull);
+        expect(log.join('\n'), contains('Model unavailable for part 2'));
+      });
+
+      test('is unavailable only when every part fails', () async {
+        final outcome = await service(
+          files: twoFiles,
+          filter: smallParts,
+          withModel: FakeModel(
+            answers: [const ReviewModelException('timed out')],
+          ),
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(outcome, ReviewOutcome.modelUnavailable);
+        expect(model.calls, 2);
+        expect(publisher.unavailableReason, 'timed out');
+        expect(publisher.report, isNull);
+      });
+
+      test('names each different failure when every part fails', () async {
+        await service(
+          files: twoFiles,
+          filter: smallParts,
+          withModel: FakeModel(
+            answers: [
+              const ReviewModelException('timed out'),
+              const ReviewModelException('HTTP 502'),
+            ],
+          ),
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(publisher.unavailableReason, 'timed out; HTTP 502');
+      });
     });
 
     test('passes the PR text to the prompt', () async {

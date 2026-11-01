@@ -180,4 +180,31 @@ void main() {
       expect(TextSafety.clean('<!-- hidden -->'), isNot(startsWith('<!--')));
     });
   });
+
+  test('says how many parts and which files got no answer', () {
+    final body = formatter.reviewBody(
+      ReviewReport(
+        review: const StructuredReview(summary: 's', findings: []),
+        selection: DiffSelection.batched(
+          batches: [
+            [addedFile('lib/a.dart')],
+            [addedFile('lib/b.dart')],
+          ],
+        ),
+        model: 'qwen38-flash',
+        headSha: shaB,
+        took: const Duration(seconds: 90),
+        unanswered: const ['lib/b.dart'],
+      ),
+    );
+
+    expect(body, contains('**Parts:** 2'));
+    expect(
+      body,
+      contains(
+        "**Not reviewed** (the model didn't answer for their part): "
+        '`lib/b.dart`',
+      ),
+    );
+  });
 }

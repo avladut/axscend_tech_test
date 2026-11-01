@@ -10,14 +10,21 @@ depends on it.
    a PR into `main`.
 2. The tool diffs the PR against its merge base. On later pushes it diffs only
    the commits since the last reviewed one, so findings aren't repeated.
-   Lockfiles, generated files and platform folders are left out, and the size
-   is capped (biggest files first).
-3. Each diff line is sent with its line number, together with the reviewer
-   instructions in [`prompts/system.md`](prompts/system.md). The answer is
+   Lockfiles, generated files and platform folders are left out.
+3. **A large PR is reviewed in parts:** up to 60,000 characters of diff per
+   model call (`--max-diff-chars`), at most 4 calls (`--max-batches`). App code
+   goes first, then config, tests and docs, so if anything still doesn't fit,
+   it's the least important files. One call stays well inside the Cloudflare
+   tunnel's ~100 s limit for an answer to start.
+4. Each diff line is sent with its line number, together with the reviewer
+   instructions in [`prompts/system.md`](prompts/system.md). Each part's prompt
+   also lists the files reviewed in other parts, for context. The answer is
    streamed back and constrained to a JSON schema when the server supports it.
-4. The answer becomes one GitHub review (`event: COMMENT`). **Every finding is
-   its own thread**, on its line when it can be, else on its file.
-5. Alex replies to each thread (accept, or ask for a change) and resolves it.
+5. The answers become one GitHub review (`event: COMMENT`): findings merged,
+   sorted by severity and capped at 10. **Every finding is its own thread**, on
+   its line when it can be, else on its file. If one part gets no answer, the
+   rest is still posted, and that part's files are named as not reviewed.
+6. Alex replies to each thread (accept, or ask for a change) and resolves it.
    Branch protection only allows the merge once every thread is resolved. The
    bot never approves, blocks or merges.
 
@@ -39,10 +46,10 @@ Small parts behind interfaces, wired by constructor injection in
 | Part | Job |
 |---|---|
 | `DiffSource` / `GitDiffSource` | What changed (`git diff`, merge base, ancestry) |
-| `DiffFilter` | What is worth reviewing, and the size cap |
+| `DiffFilter` | What is worth reviewing, in which order, packed into parts |
 | `PromptBuilder` | The two messages for the model |
 | `ReviewModel` / `OpenAiCompatibleModel` | Streaming chat call, retry, timeout |
-| `ReviewParser` | Lenient JSON → findings, capped and sorted by severity |
+| `ReviewParser` | Lenient JSON → findings, capped and sorted by severity; merges the parts |
 | `CommentPlanner` | Line, file or "general" thread for each finding |
 | `ReviewFormatter` + `TextSafety` | Markdown, with `@mentions` and fake markers neutralised |
 | `ReviewPublisher` / `GitHubPublisher` / `ConsolePublisher` | Post to the PR, or print |

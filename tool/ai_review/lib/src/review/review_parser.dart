@@ -64,6 +64,49 @@ class ReviewParser {
     );
   }
 
+  /// One review out of the answers for each part of a large pull request:
+  /// a summary paragraph per part, and all findings sorted by severity and
+  /// capped at [maxFindings]. An answer that wasn't JSON becomes a finding,
+  /// so it still gets a decision.
+  ParsedReview merge(List<ParsedReview> parts) {
+    if (parts.length == 1) return parts.single;
+    final summaries = <String>[];
+    final findings = <Finding>[];
+    var dropped = 0;
+    for (final (index, part) in parts.indexed) {
+      final label = '**Part ${index + 1}:**';
+      switch (part) {
+        case StructuredReview(
+          :final summary,
+          findings: final found,
+          droppedFindings: final left,
+        ):
+          if (summary.isNotEmpty) summaries.add('$label $summary');
+          findings.addAll(found);
+          dropped += left;
+        case UnstructuredReview(:final raw):
+          summaries.add("$label the model's answer wasn't valid JSON.");
+          findings.add(
+            Finding(
+              severity: Severity.minor,
+              title: "Part ${index + 1}'s answer couldn't be read as JSON",
+              detail: raw,
+            ),
+          );
+      }
+    }
+    final ordered = [
+      for (final severity in Severity.values)
+        ...findings.where((finding) => finding.severity == severity),
+    ];
+    final kept = ordered.take(maxFindings).toList();
+    return StructuredReview(
+      summary: summaries.join('\n\n'),
+      findings: kept,
+      droppedFindings: dropped + ordered.length - kept.length,
+    );
+  }
+
   /// The JSON object in [answer], ignoring code fences and any text around
   /// it. Null when there's no object to decode.
   static Map<String, Object?>? _decodeObject(String answer) {

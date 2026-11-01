@@ -14,6 +14,7 @@ class ReviewReport {
     this.sinceSha,
     this.promptTokens,
     this.completionTokens,
+    this.unanswered = const [],
   });
 
   final ParsedReview review;
@@ -26,6 +27,9 @@ class ReviewReport {
   final String? sinceSha;
   final int? promptTokens;
   final int? completionTokens;
+
+  /// Files in a part the model didn't answer for (down, timed out).
+  final List<String> unanswered;
 }
 
 /// Writes the review's Markdown. All model text goes through [TextSafety].
@@ -105,7 +109,17 @@ class ReviewFormatter {
       for (final file in selection.files)
         if (file.isTruncated) file.path,
     ];
-    if (selection.skipped.isNotEmpty || cut.isNotEmpty) out.writeln();
+    if (selection.skipped.isNotEmpty ||
+        cut.isNotEmpty ||
+        report.unanswered.isNotEmpty) {
+      out.writeln();
+    }
+    if (report.unanswered.isNotEmpty) {
+      out.writeln(
+        "**Not reviewed** (the model didn't answer for their part): "
+        '${_paths(report.unanswered)}',
+      );
+    }
     if (selection.skipped.isNotEmpty) {
       out.writeln(
         '**Not reviewed** (over the size limit): ${_paths(selection.skipped)}',
@@ -206,9 +220,11 @@ class ReviewFormatter {
         ? ''
         : ' · **Tokens:** ${report.promptTokens} in / '
               '${report.completionTokens} out';
+    final parts = report.selection.batches.length;
+    final split = parts > 1 ? ' · **Parts:** $parts' : '';
     return '**Model:** `${report.model}` · '
         '**Reviewed:** `${_short(report.headSha)}` ($scope) · '
-        '**Took:** ${report.took.inSeconds} s$tokens';
+        '**Took:** ${report.took.inSeconds} s$split$tokens';
   }
 
   static String _short(String sha) =>

@@ -3,6 +3,7 @@ import 'package:ai_review/src/diff/diff_source.dart';
 import 'package:ai_review/src/model/review_model.dart';
 import 'package:ai_review/src/publish/review_publisher.dart';
 import 'package:ai_review/src/review/comment_planner.dart';
+import 'package:ai_review/src/review/finding.dart';
 import 'package:ai_review/src/review/prompt_builder.dart';
 import 'package:ai_review/src/review/review_formatter.dart';
 import 'package:ai_review/src/review/review_parser.dart';
@@ -44,6 +45,10 @@ class ReviewService {
   final void Function(String message) _log;
 
   static void _ignore(String _) {}
+
+  /// Token counts add up across parts; unknown if any part didn't say.
+  static int? _add(int? total, int? more) =>
+      total == null || more == null ? null : total + more;
 
   static String _short(String sha) =>
       sha.length > 7 ? sha.substring(0, 7) : sha;
@@ -140,31 +145,54 @@ class ReviewService {
       );
       return ReviewOutcome.nothingToReview;
     }
-    _log('Sending ${selection.files.length} file(s) to ${_model.name}.');
-
+    final parts = selection.batches;
+    final answers = <ParsedReview>[];
+    final unanswered = <String>[];
+    // Each distinct failure once, in order: the same outage in every part is
+    // reported once.
+    final failures = <String>{};
+    int? promptTokens = 0;
+    int? completionTokens = 0;
     final stopwatch = Stopwatch()..start();
-    final ModelReply reply;
-    try {
-      reply = await _model.complete(
-        system: _prompts.system(),
-        user: _prompts.user(
-          selection: selection,
-          pullRequest: pullRequest,
-          incremental: since != null,
-        ),
-        jsonSchema: ReviewParser.schema,
+    // One part after another, so the server's other slot stays free.
+    for (final (index, part) in parts.indexed) {
+      _log(
+        parts.length == 1
+            ? 'Sending ${part.length} file(s) to ${_model.name}.'
+            : 'Sending part ${index + 1} of ${parts.length} '
+                  '(${part.length} file(s)) to ${_model.name}.',
       );
-    } on ReviewModelException catch (error) {
-      _log('Model unavailable: ${error.message}');
+      try {
+        final reply = await _model.complete(
+          system: _prompts.system(),
+          user: _prompts.user(
+            selection: selection,
+            pullRequest: pullRequest,
+            incremental: since != null,
+            part: index,
+          ),
+          jsonSchema: ReviewParser.schema,
+        );
+        answers.add(_parser.parse(reply.text));
+        promptTokens = _add(promptTokens, reply.promptTokens);
+        completionTokens = _add(completionTokens, reply.completionTokens);
+      } on ReviewModelException catch (error) {
+        _log('Model unavailable for part ${index + 1}: ${error.message}');
+        failures.add(error.message);
+        unanswered.addAll(part.map((file) => file.path));
+      }
+    }
+    stopwatch.stop();
+
+    if (answers.isEmpty) {
       await _publisher.publishUnavailable(
-        reason: error.message,
+        reason: failures.isEmpty ? 'no answer' : failures.join('; '),
         model: _model.name,
       );
       return ReviewOutcome.modelUnavailable;
     }
-    stopwatch.stop();
 
-    final review = _parser.parse(reply.text);
+    final review = _parser.merge(answers);
     final report = ReviewReport(
       review: review,
       selection: selection,
@@ -172,8 +200,9 @@ class ReviewService {
       headSha: headSha,
       sinceSha: since,
       took: stopwatch.elapsed,
-      promptTokens: reply.promptTokens,
-      completionTokens: reply.completionTokens,
+      promptTokens: promptTokens,
+      completionTokens: completionTokens,
+      unanswered: unanswered,
     );
     await _publisher.publish(report, _planner.plan(review, selection));
     return ReviewOutcome.published;

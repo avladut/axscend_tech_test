@@ -53,7 +53,7 @@ void main() {
       expect(
         planner.plan(
           StructuredReview(summary: '', findings: [finding()]),
-          const DiffSelection(files: []),
+          DiffSelection(files: const []),
         ),
         isEmpty,
       );

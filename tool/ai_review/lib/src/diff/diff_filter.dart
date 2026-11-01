@@ -1,15 +1,24 @@
 import 'package:ai_review/src/diff/file_diff.dart';
 
-/// The files that will be sent to the model, and what didn't fit.
+/// The files that will be sent to the model, in parts that each fit one
+/// model call, and what didn't fit at all.
 class DiffSelection {
-  const new({required this.files, this.skipped = const []});
+  /// Everything in one part, as for a small pull request.
+  new({required List<FileDiff> files, this.skipped = const []})
+    : batches = files.isEmpty ? const [] : [files];
 
-  final List<FileDiff> files;
+  const new batched({required this.batches, this.skipped = const []});
+
+  /// One model call each.
+  final List<List<FileDiff>> batches;
 
   /// Reviewable files left out because of the size cap.
   final List<String> skipped;
 
-  bool get isEmpty => files.isEmpty;
+  /// Every file that is sent, across all parts.
+  List<FileDiff> get files => [for (final batch in batches) ...batch];
+
+  bool get isEmpty => batches.every((batch) => batch.isEmpty);
 
   FileDiff? fileAt(String path) {
     for (final file in files) {
@@ -19,13 +28,17 @@ class DiffSelection {
   }
 }
 
-/// Decides which changed files are worth reviewing, and caps the total size.
+/// Decides which changed files are worth reviewing, and packs them into
+/// parts of at most [maxChars] each.
 class DiffFilter {
-  const new({this.maxChars = 60000});
+  const new({this.maxChars = 60000, this.maxBatches = 4});
 
-  /// Rough budget for the diff in the prompt. About 15–20k tokens, which
+  /// Rough budget for the diff in one model call. About 15–20k tokens, which
   /// keeps prompt processing well inside the server tunnel's time limit.
   final int maxChars;
+
+  /// How many model calls one review may make.
+  final int maxBatches;
 
   /// Below this, a truncated file isn't worth sending.
   static const _minUsefulChars = 1000;
@@ -51,29 +64,68 @@ class DiffFilter {
     return !_platformFolder.hasMatch(path);
   }
 
-  /// Biggest changes first, until the budget runs out. A file that alone is
-  /// bigger than what's left is cut to fit, as long as enough room remains.
+  /// Lower goes first: app code, then config, then tests, then docs. The
+  /// most useful review is of the code that ships.
+  static int priorityOf(String path) {
+    final name = path.split('/').last;
+    if (name.endsWith('.md')) return 3;
+    if (name.endsWith('_test.dart') ||
+        path.startsWith('test/') ||
+        path.contains('/test/')) {
+      return 2;
+    }
+    if (name.endsWith('.dart')) return 0;
+    return 1;
+  }
+
+  /// Most important first, biggest first within the same kind (then by
+  /// path). Each file goes
+  /// in the first part it fits in, and a new part starts when none has room.
+  /// Once [maxBatches] parts are full, a file is cut to fit the roomiest one
+  /// if enough room remains, and left out otherwise.
   DiffSelection select(List<FileDiff> files) {
     final reviewable = files.where(isReviewable).toList()
-      ..sort((a, b) => b.renderedLength.compareTo(a.renderedLength));
+      ..sort((a, b) {
+        final byKind = priorityOf(a.path).compareTo(priorityOf(b.path));
+        if (byKind != 0) return byKind;
+        final bySize = b.renderedLength.compareTo(a.renderedLength);
+        // Ties by path, so the same PR always splits the same way.
+        return bySize != 0 ? bySize : a.path.compareTo(b.path);
+      });
 
-    final selected = <FileDiff>[];
+    final batches = <List<FileDiff>>[];
+    final used = <int>[];
     final skipped = <String>[];
-    var used = 0;
     for (final file in reviewable) {
       final size = file.renderedLength;
-      final left = maxChars - used;
-      if (size <= left) {
-        selected.add(file);
-        used += size;
-      } else if (left >= _minUsefulChars) {
+      final fits = [
+        for (var i = 0; i < batches.length; i++)
+          if (size <= maxChars - used[i]) i,
+      ].firstOrNull;
+      if (fits != null) {
+        batches[fits].add(file);
+        used[fits] += size;
+        continue;
+      }
+      if (batches.length < maxBatches) {
+        final part = size <= maxChars ? file : file.truncatedTo(maxChars);
+        batches.add([part]);
+        used.add(part.renderedLength);
+        continue;
+      }
+      var roomiest = 0;
+      for (var i = 1; i < batches.length; i++) {
+        if (used[i] < used[roomiest]) roomiest = i;
+      }
+      final left = maxChars - used[roomiest];
+      if (left >= _minUsefulChars) {
         final cut = file.truncatedTo(left);
-        selected.add(cut);
-        used += cut.renderedLength;
+        batches[roomiest].add(cut);
+        used[roomiest] += cut.renderedLength;
       } else {
         skipped.add(file.path);
       }
     }
-    return DiffSelection(files: selected, skipped: skipped);
+    return DiffSelection.batched(batches: batches, skipped: skipped);
   }
 }

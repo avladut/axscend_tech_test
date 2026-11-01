@@ -140,6 +140,17 @@ void main() {
       expect(code, 64);
     });
 
+    test('rejects fewer than one part', () async {
+      final code = await runCli(
+        const ['--print', '--max-batches', '0'],
+        environment: modelEnv,
+        out: out,
+        err: err,
+      );
+      expect(code, 64);
+      expect(err.toString(), contains('--max-batches'));
+    });
+
     test('needs the PR details to post on GitHub', () async {
       final code = await runCli(
         const [],
