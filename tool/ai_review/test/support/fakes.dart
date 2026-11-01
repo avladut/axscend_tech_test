@@ -108,10 +108,21 @@ class FakeDiffSource implements DiffSource {
 }
 
 class FakeModel implements ReviewModel {
-  new({this.answer = '{"summary": "Fine.", "findings": []}', this.error});
+  new({
+    this.answer = '{"summary": "Fine.", "findings": []}',
+    this.error,
+    this.answers = const [],
+  });
 
   final String answer;
   final ReviewModelException? error;
+
+  /// One per call, in order: an answer (`String`) or a failure
+  /// (`ReviewModelException`). When set, overrides [answer] and [error].
+  final List<Object> answers;
+
+  /// Every user prompt, in order.
+  final users = <String>[];
 
   String? lastSystem;
   String? lastUser;
@@ -131,6 +142,16 @@ class FakeModel implements ReviewModel {
     lastSystem = system;
     lastUser = user;
     lastSchema = jsonSchema;
+    users.add(user);
+    if (answers.isNotEmpty) {
+      final next = answers[(calls - 1).clamp(0, answers.length - 1)];
+      if (next is ReviewModelException) throw next;
+      return ModelReply(
+        next as String,
+        promptTokens: 100,
+        completionTokens: 20,
+      );
+    }
     final failure = error;
     if (failure != null) throw failure;
     return ModelReply(answer, promptTokens: 100, completionTokens: 20);

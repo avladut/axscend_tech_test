@@ -101,4 +101,51 @@ void main() {
       expect(review.findings.last.title, 'nit 3');
     });
   });
+
+  group('ReviewParser.merge', () {
+    const parser = ReviewParser(maxFindings: 2);
+    Finding finding(Severity severity, String title) =>
+        Finding(severity: severity, title: title, detail: 'd');
+
+    test('returns a single part as it is', () {
+      const only = UnstructuredReview('not json');
+
+      expect(parser.merge([only]), same(only));
+    });
+
+    test('joins the summaries and sorts and caps all findings', () {
+      final merged = parser.merge([
+        StructuredReview(
+          summary: 'First half.',
+          findings: [finding(Severity.minor, 'a')],
+          droppedFindings: 1,
+        ),
+        StructuredReview(
+          summary: 'Second half.',
+          findings: [finding(Severity.nit, 'b'), finding(Severity.major, 'c')],
+        ),
+      ]);
+
+      expect(merged, isA<StructuredReview>());
+      final review = merged as StructuredReview;
+      expect(
+        review.summary,
+        '**Part 1:** First half.\n\n**Part 2:** Second half.',
+      );
+      expect(review.findings.map((f) => f.title), ['c', 'a']);
+      // 1 dropped by part 1, plus the nit that didn't make the cap.
+      expect(review.droppedFindings, 2);
+    });
+
+    test("turns a part that wasn't JSON into a finding", () {
+      final review = parser.merge([
+        const StructuredReview(summary: '', findings: []),
+        const UnstructuredReview('garbled'),
+      ]) as StructuredReview;
+
+      expect(review.findings.single.title, contains("Part 2's answer"));
+      expect(review.findings.single.detail, 'garbled');
+      expect(review.summary, contains("wasn't valid JSON"));
+    });
+  });
 }

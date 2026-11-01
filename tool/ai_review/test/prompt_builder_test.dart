@@ -58,4 +58,33 @@ void main() {
       expect(user, startsWith('Review the commits pushed since the last'));
     });
   });
+
+  group('PromptBuilder in parts', () {
+    const builder = PromptBuilder(systemTemplate: 'system');
+    final selection = DiffSelection.batched(
+      batches: [
+        [addedFile('lib/a.dart')],
+        [addedFile('lib/b.dart')],
+      ],
+    );
+
+    test("shows only this part's diffs, and lists the rest for context", () {
+      final prompt = builder.user(selection: selection, part: 1);
+
+      expect(prompt, contains('reviewed in 2 parts. This is part 2.'));
+      expect(prompt, contains('- lib/a.dart (another part)'));
+      expect(prompt, contains('- lib/b.dart\n'));
+      expect(prompt, contains('<<<FILE lib/b.dart'));
+      expect(prompt, isNot(contains('<<<FILE lib/a.dart')));
+    });
+
+    test('says nothing about parts for a small PR', () {
+      final prompt = builder.user(
+        selection: DiffSelection(files: [addedFile('lib/a.dart')]),
+      );
+
+      expect(prompt, isNot(contains('parts')));
+      expect(prompt, isNot(contains('another part')));
+    });
+  });
 }

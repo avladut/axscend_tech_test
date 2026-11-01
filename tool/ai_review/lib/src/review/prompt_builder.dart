@@ -1,4 +1,5 @@
 import 'package:ai_review/src/diff/diff_filter.dart';
+import 'package:ai_review/src/diff/file_diff.dart';
 
 /// The PR's own title and description, shown to the model as context.
 class PullRequestInfo {
@@ -24,11 +25,18 @@ class PromptBuilder {
   String system() =>
       systemTemplate.replaceAll('{{max_findings}}', '$maxFindings');
 
+  /// The prompt for [part] of [selection] (the first one by default). The
+  /// file list always shows the whole review, so the model knows what else
+  /// changed.
   String user({
     required DiffSelection selection,
     PullRequestInfo? pullRequest,
     bool incremental = false,
+    int part = 0,
   }) {
+    final parts = selection.batches;
+    final shown = parts.isEmpty ? const <FileDiff>[] : parts[part];
+    final inPart = {for (final file in shown) file.path};
     final out = StringBuffer()
       ..writeln(
         incremental
@@ -37,6 +45,16 @@ class PromptBuilder {
             : 'Review the changes in this pull request.',
       )
       ..writeln();
+    if (parts.length > 1) {
+      out
+        ..writeln(
+          'This pull request is large, so it is reviewed in '
+          '${parts.length} parts. This is part ${part + 1}. Review only the '
+          'diffs shown below. Files marked "(another part)" are reviewed '
+          'separately; they are listed so you know what else changed.',
+        )
+        ..writeln();
+    }
 
     final title = pullRequest?.title?.trim();
     final description = pullRequest?.description?.trim();
@@ -58,8 +76,12 @@ class PromptBuilder {
 
     out.writeln('## Changed files');
     for (final file in selection.files) {
+      final notes = [
+        if (!inPart.contains(file.path)) 'another part',
+        if (file.isTruncated) 'cut short to fit',
+      ];
       out.writeln(
-        '- ${file.path}${file.isTruncated ? ' (cut short to fit)' : ''}',
+        '- ${file.path}${notes.isEmpty ? '' : ' (${notes.join(', ')})'}',
       );
     }
     if (selection.skipped.isNotEmpty) {
@@ -77,7 +99,7 @@ class PromptBuilder {
         'line number in the new file, "|", then the code. Use that number '
         'for "line". Removed lines have no number.',
       );
-    for (final file in selection.files) {
+    for (final file in shown) {
       out
         ..writeln()
         ..writeln('<<<FILE ${file.path}')

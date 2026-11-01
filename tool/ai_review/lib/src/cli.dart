@@ -38,7 +38,16 @@ ArgParser buildArgParser() => ArgParser()
     help: 'Review the whole PR, even if earlier commits were reviewed.',
   )
   ..addOption('max-findings', defaultsTo: '10')
-  ..addOption('max-diff-chars', defaultsTo: '60000')
+  ..addOption(
+    'max-diff-chars',
+    defaultsTo: '60000',
+    help: 'Most diff characters sent in one model call.',
+  )
+  ..addOption(
+    'max-batches',
+    defaultsTo: '4',
+    help: 'Most model calls for one review. A bigger diff is cut down.',
+  )
   ..addOption(
     'system-prompt',
     help: "Reviewer instructions. Default: the package's prompts/system.md.",
@@ -93,8 +102,15 @@ Future<int> runCli(
 
   final maxFindings = int.tryParse(args.option('max-findings')!);
   final maxDiffChars = int.tryParse(args.option('max-diff-chars')!);
-  if (maxFindings == null || maxFindings < 1 || maxDiffChars == null) {
-    err.writeln('--max-findings and --max-diff-chars must be numbers.');
+  final maxBatches = int.tryParse(args.option('max-batches')!);
+  if (maxFindings == null ||
+      maxFindings < 1 ||
+      maxDiffChars == null ||
+      maxBatches == null ||
+      maxBatches < 1) {
+    err.writeln(
+      '--max-findings, --max-diff-chars and --max-batches must be numbers.',
+    );
     return _usageError;
   }
 
@@ -189,7 +205,7 @@ Future<int> runCli(
         maxFindings: maxFindings,
       ),
       parser: ReviewParser(maxFindings: maxFindings),
-      filter: DiffFilter(maxChars: maxDiffChars),
+      filter: DiffFilter(maxChars: maxDiffChars, maxBatches: maxBatches),
       // Progress goes to stderr so `--print` output stays clean.
       log: err.writeln,
     );
