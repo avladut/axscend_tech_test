@@ -98,33 +98,36 @@ class _UsersContent extends StatelessWidget {
                 title: l10n.usersNoMatchTitle(query.search),
                 message: l10n.usersNoMatchMessage,
               ),
-              _ => RefreshIndicator(
-                onRefresh: () => _refresh(bloc),
-                // Builds only the rows on screen, from the pages in
-                // memory. Any other row shows a placeholder until its
-                // page arrives.
-                child: ListView.builder(
-                  // Pull-to-refresh works even when the list is short.
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  itemCount: count ?? 0,
-                  itemBuilder: (context, index) {
-                    if (window.itemAt(index) case final user?) {
-                      return UserTile(
-                        user: user,
-                        onTap: () =>
-                            UserAlbumsRoute(userId: user.id).go(context),
-                      );
-                    }
-                    final page = window.pageOf(index);
-                    void request() => bloc.add(UsersPageRequested(page));
-                    return window.hasFailed(page)
-                        ? _FailedUserRow(onRetry: request)
-                        : _PendingUserRow(onShown: request);
-                  },
+              // The arms above handle a missing total; binding it here lets
+              // the compiler prove the list always has one.
+              UsersState(window: PagedWindow(:final total?)) =>
+                RefreshIndicator(
+                  onRefresh: () => _refresh(bloc),
+                  // Builds only the rows on screen, from the pages in
+                  // memory. Any other row shows a placeholder until its
+                  // page arrives.
+                  child: ListView.builder(
+                    // Pull-to-refresh works even when the list is short.
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    itemCount: total,
+                    itemBuilder: (context, index) {
+                      if (window.itemAt(index) case final user?) {
+                        return UserTile(
+                          user: user,
+                          onTap: () =>
+                              UserAlbumsRoute(userId: user.id).go(context),
+                        );
+                      }
+                      final page = window.pageOf(index);
+                      void request() => bloc.add(UsersPageRequested(page));
+                      return window.hasFailed(page)
+                          ? _FailedUserRow(onRetry: request)
+                          : _PendingUserRow(onShown: request);
+                    },
+                  ),
                 ),
-              ),
             },
           ),
         ],
