@@ -114,7 +114,12 @@ void main() {
 
         await expectLater(
           client.get('/users'),
-          failsWith<OfflineFailure>(contains('handshake failed')),
+          failsWith<OfflineFailure>(
+            allOf(
+              contains('_TransportException'),
+              contains('handshake failed'),
+            ),
+          ),
         );
       },
     );

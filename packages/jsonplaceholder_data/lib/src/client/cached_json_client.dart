@@ -9,6 +9,8 @@ import 'package:jsonplaceholder_data/src/client/response_store.dart';
 /// - `refresh: true` asks the backend again and saves the new answer.
 /// - When the backend can't be reached or fails, the last good answer is
 ///   used instead, if there is one.
+/// - A `null` answer isn't saved: the store uses `null` for "nothing saved",
+///   so it couldn't be told apart from a miss anyway.
 class CachedJsonClient implements JsonClient {
   new(this._inner, {ResponseStore? store})
     : _store = store ?? InMemoryResponseStore();

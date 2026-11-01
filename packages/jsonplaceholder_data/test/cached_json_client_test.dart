@@ -35,6 +35,15 @@ void main() {
       expect(backend.calls, [(path: '/users', refresh: false)]);
     });
 
+    test('does not save a null answer, so it asks again', () async {
+      backend.answers['/nothing'] = null;
+
+      expect(await client.get('/nothing'), isNull);
+      expect(await client.get('/nothing'), isNull);
+
+      expect(backend.calls.map((call) => call.path), ['/nothing', '/nothing']);
+    });
+
     test('keeps each path separately', () async {
       await client.get('/users');
       await client.get('/todos');

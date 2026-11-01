@@ -46,7 +46,8 @@ class HttpJsonClient implements JsonClient {
     } on Exception catch (error) {
       // http wraps socket and HTTP errors, but not every transport error
       // (a failed TLS handshake, for one). All of them mean "can't reach it".
-      throw OfflineFailure(detail: 'GET $path: $error');
+      // Errors (bugs) aren't caught. The type goes in the detail for logs.
+      throw OfflineFailure(detail: 'GET $path: ${error.runtimeType}: $error');
     }
 
     final status = response.statusCode;
