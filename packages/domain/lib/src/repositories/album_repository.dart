@@ -6,8 +6,8 @@ import 'package:domain/src/models/photo.dart';
 ///
 /// Every method throws a [DataFailure] when it can't deliver: an
 /// [OfflineFailure], a [ServerFailure] or an [UnexpectedDataFailure], and
-/// [getAlbum] also a [NotFoundFailure]. `refresh: true` skips any cache and
-/// asks the backend again.
+/// [getAlbum] and [getPhoto] also a [NotFoundFailure]. `refresh: true` skips
+/// any cache and asks the backend again.
 abstract interface class AlbumRepository {
   /// One user's albums, or everyone's when [userId] is null. A user with no
   /// albums, or an unknown one, gives an empty list.
@@ -19,4 +19,7 @@ abstract interface class AlbumRepository {
   /// The photos in the album with [albumId]. An unknown album gives an empty
   /// list.
   Future<List<Photo>> getPhotos(int albumId, {bool refresh = false});
+
+  /// The photo with [id]. Throws a [NotFoundFailure] when there is none.
+  Future<Photo> getPhoto(int id, {bool refresh = false});
 }

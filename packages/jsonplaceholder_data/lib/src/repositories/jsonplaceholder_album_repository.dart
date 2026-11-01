@@ -32,4 +32,9 @@ class JsonPlaceholderAlbumRepository implements AlbumRepository {
         'photo',
         (json) => PhotoDto.fromJson(json).toDomain(),
       );
+
+  @override
+  Future<Photo> getPhoto(int id, {bool refresh = false}) async =>
+      PhotoDto.fromJson(await _client.get('/photos/$id', refresh: refresh))
+          .toDomain();
 }
