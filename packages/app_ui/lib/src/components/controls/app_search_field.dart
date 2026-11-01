@@ -34,9 +34,13 @@ class _AppSearchFieldState extends State<AppSearchField> {
   void didUpdateWidget(AppSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only when it differs from what's typed, so typing never moves the
-    // cursor.
+    // cursor. A replaced text puts the cursor at its end: the old position
+    // belonged to the old text.
     if (widget.value != oldWidget.value && widget.value != _controller.text) {
-      _controller.text = widget.value;
+      _controller.value = TextEditingValue(
+        text: widget.value,
+        selection: TextSelection.collapsed(offset: widget.value.length),
+      );
     }
   }
 

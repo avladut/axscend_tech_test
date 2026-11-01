@@ -118,6 +118,26 @@ void main() {
       expect(find.byTooltip('Clear'), findsNothing);
     });
 
+    testWidgets('puts the cursor at the end of a text replaced from outside', (
+      tester,
+    ) async {
+      Widget field(String value) => AppSearchField(
+        hint: 'Search',
+        clearTooltip: 'Clear',
+        value: value,
+        onChanged: (_) {},
+      );
+
+      await tester.pumpApp(field('bret'));
+      await tester.pumpApp(field('leanne'));
+
+      final controller = tester
+          .widget<TextField>(find.byType(TextField))
+          .controller!;
+      expect(controller.text, 'leanne');
+      expect(controller.selection, const TextSelection.collapsed(offset: 6));
+    });
+
     testWidgets('keeps the cursor when the parent echoes what was typed', (
       tester,
     ) async {
