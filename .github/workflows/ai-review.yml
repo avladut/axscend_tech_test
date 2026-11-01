@@ -30,15 +30,28 @@ jobs:
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The tool stops starting parts after 12 minutes; one model call can
+    # take about 8 more. 25 leaves room to post the review.
+    timeout-minutes: 25
     steps:
-      - name: Check out
+      # main's copy of the reviewer and its prompt, so a PR can't weaken its
+      # own review. The PR's commits are only read through git, as data.
+      - name: Check out main's reviewer
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
           # Full history: the diff needs the merge base and earlier reviews.
           fetch-depth: 0
           persist-credentials: false
+
+      # The full fetch above has every branch of this repo, so the PR's head
+      # commit is normally here already. Fetch it only if it isn't.
+      - name: Make sure the PR's commits are here
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          git cat-file -e "$HEAD_SHA^{commit}" ||
+          git fetch --no-tags origin "$HEAD_SHA"
 
       # The workspace includes Flutter packages, so resolving it needs Flutter.
       - name: Set up Flutter ${{ env.FLUTTER_VERSION }}

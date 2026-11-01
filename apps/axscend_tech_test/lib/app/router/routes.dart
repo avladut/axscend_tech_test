@@ -10,6 +10,10 @@ part 'routes.g.dart';
 /// The start page: everyone in the directory. A user's albums, an album's
 /// photos and one photo open on top of it, so back returns to where you
 /// were. Ids go in the path, so a deep link or a web refresh works.
+///
+/// go_router keys a page by its route pattern, so going to the same route
+/// with other ids would reuse the page and its bloc. Each screen is keyed
+/// by its ids instead, so new ids always get a fresh bloc.
 @TypedGoRoute<UsersRoute>(
   path: '/users',
   routes: [
@@ -42,7 +46,7 @@ class UserAlbumsRoute extends GoRouteData with $UserAlbumsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      UserAlbumsScreen(userId: userId);
+      UserAlbumsScreen(key: ValueKey(userId), userId: userId);
 }
 
 /// An album's photos.
@@ -54,8 +58,10 @@ class AlbumPhotosRoute extends GoRouteData with $AlbumPhotosRoute {
   final int albumId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      AlbumPhotosScreen(address: (userId: userId, albumId: albumId));
+  Widget build(BuildContext context, GoRouterState state) {
+    final address = (userId: userId, albumId: albumId);
+    return AlbumPhotosScreen(key: ValueKey(address), address: address);
+  }
 }
 
 /// One photo at full size.
@@ -72,7 +78,8 @@ class PhotoRoute extends GoRouteData with $PhotoRoute {
   final int photoId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => PhotoScreen(
-    address: (userId: userId, albumId: albumId, photoId: photoId),
-  );
+  Widget build(BuildContext context, GoRouterState state) {
+    final address = (userId: userId, albumId: albumId, photoId: photoId);
+    return PhotoScreen(key: ValueKey(address), address: address);
+  }
 }

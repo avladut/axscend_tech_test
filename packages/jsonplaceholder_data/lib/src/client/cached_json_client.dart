@@ -19,48 +19,75 @@ class CachedJsonClient implements JsonClient {
   final ResponseStore _store;
 
   @override
-  Future<Object?> get(String path, {bool refresh = false}) =>
-      _cached(path, refresh, () => _inner.get(path, refresh: refresh));
+  Future<T> get<T>(
+    String path, {
+    T Function(Object? json)? parse,
+    bool refresh = false,
+  }) => _cached(
+    path,
+    refresh,
+    fetch: () => _inner.get<Object?>(path, refresh: refresh),
+    read: (json) => parseWith(json, parse),
+  );
 
   /// Cached like [get]: each query is saved separately, with its total.
   @override
-  Future<JsonPage> getPage(
+  Future<JsonPage<T>> getPage<T>(
     String path, {
     Map<String, String> query = const {},
+    T Function(Object? json)? parse,
     bool refresh = false,
-  }) async {
+  }) {
     // Sorted, so the same query always finds the same entry. The prefix
     // keeps it apart from a plain get of the same path.
     final entries = query.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     final sorted = Uri(queryParameters: Map.fromEntries(entries)).query;
-    final saved = await _cached('page:$path?$sorted', refresh, () async {
-      final page = await _inner.getPage(path, query: query, refresh: refresh);
-      return {'json': page.json, 'total': page.total};
-    });
-    final answer = saved! as Map<String, Object?>;
-    return (json: answer['json'], total: answer['total'] as int?);
+    return _cached(
+      'page:$path?$sorted',
+      refresh,
+      fetch: () async {
+        final page = await _inner.getPage<Object?>(
+          path,
+          query: query,
+          refresh: refresh,
+        );
+        return {'json': page.json, 'total': page.total};
+      },
+      read: (saved) => switch (saved) {
+        {'json': final Object? json, 'total': final int total} => (
+          json: parseWith(json, parse),
+          total: total,
+        ),
+        _ => throw UnexpectedDataFailure(detail: 'page:$path: not a page'),
+      },
+    );
   }
 
-  Future<Object?> _cached(
+  /// The answer for [key]: saved, unless [refresh], or else [fetch]ed. A
+  /// fetched answer is [read] (parsed) before it is saved, so one that
+  /// doesn't parse throws and never replaces the last good one.
+  Future<T> _cached<T>(
     String key,
-    bool refresh,
-    Future<Object?> Function() fetch,
-  ) async {
+    bool refresh, {
+    required Future<Object?> Function() fetch,
+    required T Function(Object? json) read,
+  }) async {
     if (!refresh) {
       final saved = await _store.read(key);
-      if (saved != null) return saved;
+      if (saved != null) return read(saved);
     }
     try {
       final fresh = await fetch();
+      final result = read(fresh);
       if (fresh != null) await _store.write(key, fresh);
-      return fresh;
+      return result;
     } on DataFailure catch (failure) {
       // "Not found" and bad data are real answers. Old data would hide them.
       final canFallBack = failure is OfflineFailure || failure is ServerFailure;
       final saved = canFallBack ? await _store.read(key) : null;
       if (saved == null) rethrow;
-      return saved;
+      return read(saved);
     }
   }
 }

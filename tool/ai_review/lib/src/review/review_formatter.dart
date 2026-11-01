@@ -28,15 +28,22 @@ class ReviewReport {
   final int? promptTokens;
   final int? completionTokens;
 
-  /// Files in a part the model didn't answer for (down, timed out).
+  /// Files in a part the model didn't answer for (down, timed out, or out
+  /// of time).
   final List<String> unanswered;
+
+  /// The commit this review counts as fully reviewed: the head when every
+  /// part was answered. Otherwise the last commit reviewed before
+  /// ([sinceSha]),
+  /// or none, so the next run reviews the unanswered files again.
+  String? get coveredSha => unanswered.isEmpty ? headSha : sinceSha;
 }
 
 /// Writes the review's Markdown. All model text goes through [TextSafety].
 class ReviewFormatter {
   const new();
 
-  /// Hidden marker in the review body: the commit this review covered.
+  /// Hidden marker in the review body: the commit fully reviewed so far.
   static final markerPattern = RegExp('^<!-- ai-review:sha=([0-9a-f]{40}) -->');
 
   static String marker(String sha) => '<!-- ai-review:sha=$sha -->';
@@ -52,8 +59,9 @@ class ReviewFormatter {
       StructuredReview(:final findings) => findings.isEmpty,
       UnstructuredReview() => false,
     };
-    final out = StringBuffer()
-      ..writeln(marker(report.headSha))
+    final out = StringBuffer();
+    if (report.coveredSha case final sha?) out.writeln(marker(sha));
+    out
       ..writeln(
         noFindings
             ? '### 🤖 AI review (advisory): no findings'

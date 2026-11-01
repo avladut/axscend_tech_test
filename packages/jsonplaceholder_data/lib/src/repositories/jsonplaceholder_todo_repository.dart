@@ -9,13 +9,14 @@ class JsonPlaceholderTodoRepository implements TodoRepository {
   final JsonClient _client;
 
   @override
-  Future<List<Todo>> getTodos({int? userId, bool refresh = false}) async =>
-      parseList(
-        await _client.get(
-          userId == null ? '/todos' : '/users/$userId/todos',
-          refresh: refresh,
+  Future<List<Todo>> getTodos({int? userId, bool refresh = false}) =>
+      _client.get(
+        userId == null ? '/todos' : '/users/$userId/todos',
+        refresh: refresh,
+        parse: (json) => parseList(
+          json,
+          'todo',
+          (item) => TodoDto.fromJson(item).toDomain(),
         ),
-        'todo',
-        (json) => TodoDto.fromJson(json).toDomain(),
       );
 }

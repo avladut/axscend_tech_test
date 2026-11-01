@@ -27,26 +27,37 @@ class FakeJsonClient implements JsonClient {
   /// The query of every [getPage] call, in order.
   final queries = <Map<String, String>>[];
 
-  /// What [getPage] reports as the whole list's length.
+  /// What [getPage] reports as the whole list's length. Null makes it fail,
+  /// like a backend that doesn't say.
   int? total;
 
   @override
-  Future<Object?> get(String path, {bool refresh = false}) async {
+  Future<T> get<T>(
+    String path, {
+    T Function(Object? json)? parse,
+    bool refresh = false,
+  }) => Future.sync(() {
     calls.add((path: path, refresh: refresh));
     if (failure case final failure?) throw failure;
     if (!answers.containsKey(path)) throw NotFoundFailure(detail: path);
-    return answers[path];
-  }
+    return parseWith(answers[path], parse);
+  });
 
   /// Answers from [answers] by path, like [get], whatever the query.
   @override
-  Future<JsonPage> getPage(
+  Future<JsonPage<T>> getPage<T>(
     String path, {
     Map<String, String> query = const {},
+    T Function(Object? json)? parse,
     bool refresh = false,
   }) async {
     queries.add(query);
-    return (json: await get(path, refresh: refresh), total: total);
+    final json = await get(path, parse: parse, refresh: refresh);
+    final total = this.total;
+    if (total == null) {
+      throw UnexpectedDataFailure(detail: '$path: no total');
+    }
+    return (json: json, total: total);
   }
 }
 

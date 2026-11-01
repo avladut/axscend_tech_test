@@ -10,7 +10,11 @@ void main() {
     skipped: const ['lib/huge.dart'],
   );
 
-  ReviewReport report(ParsedReview review, {String? sinceSha}) => ReviewReport(
+  ReviewReport report(
+    ParsedReview review, {
+    String? sinceSha,
+    List<String> unanswered = const [],
+  }) => ReviewReport(
     review: review,
     selection: selection,
     model: 'qwen38-flash',
@@ -19,7 +23,31 @@ void main() {
     took: const Duration(seconds: 42),
     promptTokens: 5000,
     completionTokens: 800,
+    unanswered: unanswered,
   );
+
+  group('the reviewed-commit marker', () {
+    const review = StructuredReview(summary: 'Fine.', findings: []);
+
+    String? markedSha(ReviewReport report) => ReviewFormatter.markerPattern
+        .firstMatch(const ReviewFormatter().reviewBody(report))
+        ?.group(1);
+
+    test('marks the head when every part was answered', () {
+      expect(markedSha(report(review)), shaB);
+    });
+
+    test('stays at the last full review when a part got no answer', () {
+      expect(
+        markedSha(report(review, sinceSha: shaA, unanswered: ['lib/b.dart'])),
+        shaA,
+      );
+    });
+
+    test('marks nothing when a first review missed a part', () {
+      expect(markedSha(report(review, unanswered: ['lib/b.dart'])), isNull);
+    });
+  });
 
   group('ReviewFormatter.reviewBody', () {
     final structured = StructuredReview(

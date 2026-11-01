@@ -88,8 +88,13 @@ void main() {
         window: loaded.window.withPage(1, second, total: 6),
       ),
       act: (bloc) => bloc.add(const UsersLoadRequested(refresh: true)),
-      skip: 1,
-      expect: () => [loaded],
+      expect: () => [
+        UsersState(
+          status: UsersStatus.loading,
+          window: loaded.window.withPage(1, second, total: 6),
+        ),
+        loaded.copyWith(listRefreshed: true),
+      ],
       verify: (_) => expect(calls(), [(0, const UserQuery(), true)]),
     );
 
@@ -122,7 +127,7 @@ void main() {
       act: (bloc) => bloc.add(const UsersLoadRequested(refresh: true)),
       expect: () => [
         const UsersState(status: UsersStatus.loading, window: small),
-        loaded,
+        loaded.copyWith(listRefreshed: true),
       ],
     );
 
@@ -236,6 +241,7 @@ void main() {
         status: UsersStatus.success,
         query: const UserQuery(sort: UserSort.company),
         window: small.withPage(0, second, total: 6),
+        listQuery: const UserQuery(sort: UserSort.company),
       ),
     ],
   );
@@ -252,6 +258,38 @@ void main() {
         loaded.copyWith(window: loaded.window.withPage(1, second, total: 6)),
       ],
       verify: (_) => expect(calls(), [(1, const UserQuery(), false)]),
+    );
+
+    blocTest<UsersBloc, UsersState>(
+      'after a refresh, later pages skip the cache too',
+      setUp: () => answerPage(1, second),
+      build: build,
+      seed: () => loaded.copyWith(listRefreshed: true),
+      act: (bloc) => bloc.add(const UsersPageRequested(1)),
+      verify: (_) => expect(calls(), [(1, const UserQuery(), true)]),
+    );
+
+    blocTest<UsersBloc, UsersState>(
+      'while a search waits, pages still fit the list on screen',
+      setUp: () {
+        answerPage(1, second);
+        answerPage(0, third, total: 2);
+      },
+      build: build,
+      seed: () => loaded,
+      act: (bloc) async {
+        bloc.add(const UsersSearchChanged('rom'));
+        await pumpEventQueue();
+        bloc.add(const UsersPageRequested(1));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(calls(), [
+          (1, const UserQuery(), false),
+          (0, const UserQuery(text: 'rom'), false),
+        ]);
+        expect(bloc.state.window.total, 2);
+      },
     );
 
     blocTest<UsersBloc, UsersState>(

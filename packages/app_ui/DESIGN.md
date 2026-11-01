@@ -39,7 +39,8 @@ The app passes its brand once, to `AppTheme.light(brand)` and
   only.
 - **Accessible by default.** Avatars are decorative, headers are marked as
   headers, done states and progress are announced, and icon buttons have
-  tooltips.
+  tooltips. A focused field shows a primary border, and status text is at
+  least 4.5:1 on its background.
 - **No text of its own.** Every label comes in through a parameter, so the
   app translates it.
 
@@ -50,7 +51,7 @@ Read them in widgets through `BuildContext`:
 | Accessor | Gives |
 |---|---|
 | `context.colors` | The Material 3 `ColorScheme` built from the seed. |
-| `context.appColors` | What `ColorScheme` lacks: `success`, `warning` (each with `on…` and `…Container`), and `muted` for secondary text. |
+| `context.appColors` | What `ColorScheme` lacks: `success`, `warning` (each with `on…`, `…Container` and `on…Container`, the text colour on that container), and `muted` for secondary text. |
 | `context.textStyles` | The Material 3 type scale (`titleMedium`, `bodyLarge`, …). |
 | `context.windowSize` | `compact`, `medium` or `expanded`, from the window width. |
 
@@ -77,13 +78,13 @@ Read them in widgets through `BuildContext`:
 
 | Component | Use it for |
 |---|---|
-| `AppListTile` | A row in a list. A tappable row gets a chevron unless it has its own `trailing`; `selected` marks the row open in the detail pane. |
+| `AppListTile` | A row in a list. A tappable row gets a chevron unless it has its own `trailing`; `selected` marks the row open in the detail pane. The subtitle is one line ("…" when long), so every row is as tall as an `AppListTilePlaceholder`. |
 | `AppListTilePlaceholder` | Stands in for an `AppListTile` with an avatar and subtitle while its data loads, at the same height. Give it a `semanticLabel` ("Loading user"). Still, with no shimmer. |
 | `AppCard` | One item that needs a surface: a post, a comment. Tappable with `onTap`. |
 | `AppAvatar` | A person's initials (`sm`, `md`, `lg`). Same name, same colour. Decorative next to a name; give it a `semanticLabel` when it stands alone. |
 | `AppSectionHeader` | The title of a group, with an optional count tag and action (such as a sort button). |
 | `AppInfoRow` | A labelled value with an icon, such as an email. Tappable with `onTap`. |
-| `AppTag` | A count or status in a pill. The `AppTone` sets the colours. |
+| `AppTag` | A count or status in a pill. The `AppTone` sets the colours; the text is always at least 4.5:1 on its pill. |
 | `AppCheckRow` | A todo: ticked, muted and struck through when done. Read-only. |
 | `AppNetworkImage` | A photo from the web, with a placeholder while loading and a broken-image icon on failure. Kept on the device (see Pictures below) and decoded at the size shown. Always needs a `semanticLabel`; `onTap` makes it a button with a ripple. |
 | `AppProgressRing` | How much is done (0 to 1), with the percentage inside. |

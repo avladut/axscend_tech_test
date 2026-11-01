@@ -188,6 +188,23 @@ void main() {
       verify(() => bloc.add(const UsersLoadRequested(refresh: true))).called(1);
     });
 
+    testWidgets('a failed search keeps the search field, to clear it', (
+      tester,
+    ) async {
+      await pumpView(
+        tester,
+        const UsersState(
+          status: UsersStatus.failure,
+          query: UserQuery(text: 'zzz'),
+          failure: OfflineFailure(),
+        ),
+      );
+
+      expect(find.text(l10n.failureOfflineTitle), findsOneWidget);
+      await tester.tap(find.byTooltip(l10n.usersSearchClear));
+      verify(() => bloc.add(const UsersSearchChanged(''))).called(1);
+    });
+
     testWidgets('says so when there are no users at all', (tester) async {
       await pumpView(tester, loaded.copyWith(window: windowOf(const [])));
 

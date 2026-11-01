@@ -9,11 +9,8 @@ class JsonPlaceholderUserRepository implements UserRepository {
   final JsonClient _client;
 
   @override
-  Future<List<User>> getUsers({bool refresh = false}) async => parseList(
-    await _client.get('/users', refresh: refresh),
-    'user',
-    (json) => UserDto.fromJson(json).toDomain(),
-  );
+  Future<List<User>> getUsers({bool refresh = false}) =>
+      _client.get('/users', refresh: refresh, parse: _users);
 
   @override
   Future<ResultPage<User>> getUsersPage(
@@ -35,24 +32,19 @@ class JsonPlaceholderUserRepository implements UserRepository {
         },
         '_order': query.sort == UserSort.nameDescending ? 'desc' : 'asc',
       },
+      parse: _users,
       refresh: refresh,
     );
-    final total = answer.total;
-    if (total == null) {
-      throw const UnexpectedDataFailure(detail: 'GET /users: no total count');
-    }
-    return ResultPage(
-      items: parseList(
-        answer.json,
-        'user',
-        (json) => UserDto.fromJson(json).toDomain(),
-      ),
-      total: total,
-    );
+    return ResultPage(items: answer.json, total: answer.total);
   }
 
   @override
-  Future<User> getUser(int id, {bool refresh = false}) async =>
-      UserDto.fromJson(await _client.get('/users/$id', refresh: refresh))
-          .toDomain();
+  Future<User> getUser(int id, {bool refresh = false}) => _client.get(
+    '/users/$id',
+    refresh: refresh,
+    parse: (json) => UserDto.fromJson(json).toDomain(),
+  );
+
+  static List<User> _users(Object? json) =>
+      parseList(json, 'user', (item) => UserDto.fromJson(item).toDomain());
 }

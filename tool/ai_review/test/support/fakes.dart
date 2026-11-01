@@ -112,9 +112,13 @@ class FakeModel implements ReviewModel {
     this.answer = '{"summary": "Fine.", "findings": []}',
     this.error,
     this.answers = const [],
+    this.delay = Duration.zero,
   });
 
   final String answer;
+
+  /// How long each answer takes.
+  final Duration delay;
   final ReviewModelException? error;
 
   /// One per call, in order: an answer (`String`) or a failure
@@ -143,6 +147,7 @@ class FakeModel implements ReviewModel {
     lastUser = user;
     lastSchema = jsonSchema;
     users.add(user);
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
     if (answers.isNotEmpty) {
       final next = answers[(calls - 1).clamp(0, answers.length - 1)];
       if (next is ReviewModelException) throw next;

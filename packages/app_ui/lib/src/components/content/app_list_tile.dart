@@ -29,7 +29,9 @@ class AppListTile extends StatelessWidget {
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitle == null
           ? null
-          : Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+          // One line, so every row is as tall as an AppListTilePlaceholder
+          // and a list doesn't jump when its data arrives.
+          : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       leading: leading,
       trailing:
           trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right)),

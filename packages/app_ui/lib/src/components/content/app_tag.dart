@@ -22,8 +22,14 @@ class AppTag extends StatelessWidget {
         colors.onSurfaceVariant,
       ),
       AppTone.brand => (colors.primaryContainer, colors.onPrimaryContainer),
-      AppTone.success => (appColors.successContainer, appColors.success),
-      AppTone.warning => (appColors.warningContainer, appColors.warning),
+      AppTone.success => (
+        appColors.successContainer,
+        appColors.onSuccessContainer,
+      ),
+      AppTone.warning => (
+        appColors.warningContainer,
+        appColors.onWarningContainer,
+      ),
     };
     return DecoratedBox(
       decoration: BoxDecoration(

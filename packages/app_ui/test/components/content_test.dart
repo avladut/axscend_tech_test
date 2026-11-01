@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:app_ui/app_ui.dart';
 import 'package:app_ui/testing.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -64,15 +66,17 @@ void main() {
     ) async {
       for (final scale in [1.0, 2.0]) {
         await tester.pumpApp(
+          size: TestWindows.phone,
           MediaQuery.withClampedTextScaling(
             minScaleFactor: scale,
             maxScaleFactor: scale,
             child: const Column(
               children: [
+                // Long enough to wrap on a phone if it could.
                 AppListTile(
-                  title: 'Leanne Graham',
-                  subtitle: '@Bret',
-                  leading: AppAvatar(name: 'Leanne Graham'),
+                  title: 'Clementine Bauch',
+                  subtitle: '@Samantha · Romaguera-Jacobson and Partners',
+                  leading: AppAvatar(name: 'Clementine Bauch'),
                 ),
                 AppListTilePlaceholder(),
               ],
@@ -166,6 +170,39 @@ void main() {
       for (final tone in AppTone.values) {
         await tester.pumpApp(AppTag(label: tone.name, tone: tone));
         expect(find.text(tone.name), findsOneWidget);
+      }
+    });
+
+    testWidgets('success and warning text is readable on its tag (4.5:1)', (
+      tester,
+    ) async {
+      double contrast(Color a, Color b) {
+        final (la, lb) = (a.computeLuminance(), b.computeLuminance());
+        return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+      }
+
+      for (final brightness in Brightness.values) {
+        for (final tone in [AppTone.success, AppTone.warning]) {
+          await tester.pumpApp(
+            AppTag(label: 'Done', tone: tone),
+            brightness: brightness,
+          );
+          // MaterialApp animates a change of theme: let it finish.
+          await tester.pumpAndSettle();
+          final text = tester.widget<Text>(find.text('Done'));
+          final box = tester.widget<DecoratedBox>(
+            find.descendant(
+              of: find.byType(AppTag),
+              matching: find.byType(DecoratedBox),
+            ),
+          );
+          final background = (box.decoration as BoxDecoration).color!;
+          expect(
+            contrast(text.style!.color!, background),
+            greaterThanOrEqualTo(4.5),
+            reason: '$tone, $brightness',
+          );
+        }
       }
     });
   });

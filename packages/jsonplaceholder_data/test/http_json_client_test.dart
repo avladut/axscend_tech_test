@@ -39,7 +39,7 @@ void main() {
     test('GETs the path from JSONPlaceholder and decodes the JSON', () async {
       final client = clientWith((_) async => http.Response('[{"id": 1}]', 200));
 
-      expect(await client.get('/users/1/posts'), [
+      expect(await client.get<Object?>('/users/1/posts'), [
         {'id': 1},
       ]);
       final request = requests.single;
@@ -57,7 +57,7 @@ void main() {
         baseUrl: Uri.parse('https://api.example.test/v1/'),
       );
 
-      await client.get('/users');
+      await client.get<Object?>('/users');
 
       expect(
         requests.single.url.toString(),
@@ -75,7 +75,7 @@ void main() {
           ),
         );
 
-        final page = await client.getPage(
+        final page = await client.getPage<Object?>(
           '/users',
           query: {'_page': '2', 'q': 'rom ana'},
         );
@@ -92,17 +92,37 @@ void main() {
         );
       });
 
-      test('has no total when the backend sends none', () async {
+      test('fails when the backend does not say the total', () async {
         final client = clientWith((_) async => http.Response('[]', 200));
 
-        expect((await client.getPage('/users')).total, isNull);
+        await expectLater(
+          client.getPage<Object?>('/users'),
+          throwsA(isA<UnexpectedDataFailure>()),
+        );
+      });
+
+      test('hands the JSON to parse', () async {
+        final client = clientWith(
+          (_) async =>
+              http.Response('[1, 2]', 200, headers: {'x-total-count': '2'}),
+        );
+
+        expect(
+          await client.get('/numbers', parse: (json) => (json! as List).length),
+          2,
+        );
+        final page = await client.getPage(
+          '/numbers',
+          parse: (json) => (json! as List).length,
+        );
+        expect(page.json, 2);
       });
 
       test('fails like get, without the search in the detail', () async {
         final client = clientWith((_) async => http.Response('', 500));
 
         await expectLater(
-          client.getPage('/users', query: {'q': 'leanne'}),
+          client.getPage<Object?>('/users', query: {'q': 'leanne'}),
           throwsA(
             isA<ServerFailure>().having(
               (failure) => failure.detail,
@@ -117,8 +137,8 @@ void main() {
     test('asks the backend every time, refresh or not', () async {
       final client = clientWith((_) async => http.Response('[]', 200));
 
-      await client.get('/todos');
-      await client.get('/todos', refresh: true);
+      await client.get<Object?>('/todos');
+      await client.get<Object?>('/todos', refresh: true);
 
       expect(requests, hasLength(2));
     });
@@ -127,7 +147,7 @@ void main() {
       final client = clientWith((_) async => http.Response('{}', 404));
 
       await expectLater(
-        client.get('/users/99'),
+        client.get<Object?>('/users/99'),
         failsWith<NotFoundFailure>('GET /users/99'),
       );
     });
@@ -137,7 +157,7 @@ void main() {
         final client = clientWith((_) async => http.Response('', status));
 
         await expectLater(
-          client.get('/users'),
+          client.get<Object?>('/users'),
           throwsA(
             isA<ServerFailure>().having((f) => f.statusCode, 'status', status),
           ),
@@ -151,7 +171,7 @@ void main() {
       );
 
       await expectLater(
-        client.get('/users'),
+        client.get<Object?>('/users'),
         failsWith<OfflineFailure>(contains('Connection refused')),
       );
     });
@@ -162,7 +182,7 @@ void main() {
         final client = clientWith((_) => throw _TransportException());
 
         await expectLater(
-          client.get('/users'),
+          client.get<Object?>('/users'),
           failsWith<OfflineFailure>(
             allOf(
               contains('_TransportException'),
@@ -180,7 +200,7 @@ void main() {
       );
 
       await expectLater(
-        client.get('/users'),
+        client.get<Object?>('/users'),
         failsWith<OfflineFailure>(contains('timed out')),
       );
     });
@@ -191,7 +211,7 @@ void main() {
       );
 
       await expectLater(
-        client.get('/users'),
+        client.get<Object?>('/users'),
         failsWith<UnexpectedDataFailure>(contains('not JSON')),
       );
     });

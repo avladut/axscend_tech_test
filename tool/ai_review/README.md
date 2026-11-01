@@ -7,7 +7,10 @@ depends on it.
 ## How a review works
 
 1. `.github/workflows/ai-review.yml` runs `dart run ai_review` on every push to
-   a PR into `main`.
+   a PR into `main`. It runs **main's copy** of the tool and its prompt, and
+   reads the PR's commits only through `git`, so a PR can't weaken its own
+   review. (The workflow file itself still comes from the PR, as GitHub
+   runs `pull_request` workflows; a change to it shows in the diff.)
 2. The tool diffs the PR against its merge base. On later pushes it diffs only
    the commits since the last reviewed one, so findings aren't repeated.
    Lockfiles, generated files and platform folders are left out.
@@ -24,7 +27,11 @@ depends on it.
    sorted by severity and capped at 10. **Every finding is its own thread**, on
    its line when it can be, else on its file. If one part gets no answer, the
    rest is still posted, and that part's files are named as not reviewed.
-6. Alex replies to each thread (accept, or ask for a change) and resolves it.
+   The review then doesn't count as complete: the next push reviews those
+   files again.
+6. **A deadline:** no part starts after 12 minutes, so the run always ends,
+   and posts what it has, inside the job's 25-minute limit.
+7. Alex replies to each thread (accept, or ask for a change) and resolves it.
    Branch protection only allows the merge once every thread is resolved. The
    bot never approves, blocks or merges.
 
