@@ -250,6 +250,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(RefreshProgressIndicator), findsNothing);
     });
+
+    testWidgets('pull to refresh stops quietly if the bloc closes first', (
+      tester,
+    ) async {
+      final states = StreamController<UsersState>.broadcast();
+      whenListen(bloc, states.stream, initialState: loaded);
+      await pumpView(tester, loaded);
+
+      await tester.fling(find.text('Ervin Howell'), const Offset(0, 400), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(RefreshProgressIndicator), findsOneWidget);
+
+      await states.close();
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshProgressIndicator), findsNothing);
+    });
   });
 
   group('UsersView with a real bloc', () {

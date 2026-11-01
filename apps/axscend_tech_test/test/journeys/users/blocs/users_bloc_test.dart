@@ -148,6 +148,28 @@ void main() {
     });
   });
 
+  test('picking the sort already in use does not cancel a load', () async {
+    final slow = Completer<ResultPage<User>>();
+    when(
+      () => repository.getUsersPage(
+        any(),
+        query: any(named: 'query'),
+        refresh: any(named: 'refresh'),
+      ),
+    ).thenAnswer((_) => slow.future);
+    final bloc = build()
+      ..emit(loaded)
+      ..add(const UsersLoadRequested(refresh: true));
+    await pumpEventQueue();
+    bloc.add(const UsersSortChanged(UserSort.nameAscending));
+    await pumpEventQueue();
+    slow.complete(ResultPage(items: first, total: 6));
+    await pumpEventQueue();
+
+    expect(bloc.state.status, UsersStatus.success);
+    await bloc.close();
+  });
+
   group('UsersSearchChanged', () {
     blocTest<UsersBloc, UsersState>(
       'waits for typing to pause, then searches once',

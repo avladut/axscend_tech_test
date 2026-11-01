@@ -128,11 +128,13 @@ class _UsersContent extends StatelessWidget {
   }
 
   /// Asks for fresh users and completes when the load has finished, so the
-  /// refresh spinner stays until then.
+  /// refresh spinner stays until then. Also completes if the bloc closes
+  /// first, such as when the screen is left.
   Future<void> _refresh(UsersBloc bloc) {
     bloc.add(const UsersLoadRequested(refresh: true));
     return bloc.stream.firstWhere(
       (state) => state.status != UsersStatus.loading,
+      orElse: () => bloc.state,
     );
   }
 }

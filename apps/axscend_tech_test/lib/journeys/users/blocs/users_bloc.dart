@@ -16,8 +16,16 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     PagedWindow<User> window = const PagedWindow(),
   }) : super(UsersState(window: window)) {
     // A newer load, search or sort replaces one still running, so an older
-    // answer never overwrites a newer list.
-    on<UsersListChanged>(_onListChanged, transformer: restartable());
+    // answer never overwrites a newer list. A change that changes nothing
+    // (picking the sort already in use) is dropped first, so it can't cancel
+    // a load and leave the list loading.
+    on<UsersListChanged>(
+      _onListChanged,
+      transformer: (events, mapper) => restartable<UsersListChanged>()(
+        events.where(_changesTheList),
+        mapper,
+      ),
+    );
     // Pages load side by side. Each page is fetched once at a time.
     on<UsersPageRequested>(_onPageRequested);
   }
@@ -31,17 +39,11 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     UsersListChanged event,
     Emitter<UsersState> emit,
   ) async {
-    final query = switch (event) {
-      UsersLoadRequested() => state.query,
-      UsersSearchChanged(:final text) => state.query.copyWith(text: text),
-      UsersSortChanged(:final sort) => state.query.copyWith(sort: sort),
-    };
+    final query = _queryFor(event);
     if (query != state.query) {
       // Kept straight away, so a sort picked while a search waits still
       // uses the typed text.
       emit(state.copyWith(query: query));
-    } else if (event is! UsersLoadRequested) {
-      return;
     }
     if (event is UsersSearchChanged) {
       // A newer keystroke restarts this handler, so only the last one
@@ -71,6 +73,17 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
       emit(state.copyWith(status: UsersStatus.failure, failure: () => failure));
     }
   }
+
+  /// The query [event] asks for.
+  UserQuery _queryFor(UsersListChanged event) => switch (event) {
+    UsersLoadRequested() => state.query,
+    UsersSearchChanged(:final text) => state.query.copyWith(text: text),
+    UsersSortChanged(:final sort) => state.query.copyWith(sort: sort),
+  };
+
+  /// Whether [event] changes the list. A load always does.
+  bool _changesTheList(UsersListChanged event) =>
+      event is UsersLoadRequested || _queryFor(event) != state.query;
 
   Future<void> _onPageRequested(
     UsersPageRequested event,
