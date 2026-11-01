@@ -1,6 +1,6 @@
 # Task 02: Domain
 
-- **Status:** draft, waiting for Alex's approval
+- **Status:** approved by Alex on 2026-11-01
 - **Branch:** `task/02-domain`
 
 ## Alex's prompts (verbatim)
@@ -18,6 +18,13 @@ them. Alex answered:
 > Yes, split it
 
 The JSONPlaceholder package becomes task 03, with its own prompt.
+
+Alex approved the domain-only draft without changes:
+
+> create the domain layer covered by unit tests
+
+He didn't comment on the open choices below, so they are Claude's defaults
+and still his to change.
 
 ## Context
 
