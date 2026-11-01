@@ -6,7 +6,7 @@ class AppSearchField extends StatefulWidget {
     required this.hint,
     required this.clearTooltip,
     required this.onChanged,
-    this.initialValue = '',
+    this.value = '',
     super.key,
   });
 
@@ -19,14 +19,26 @@ class AppSearchField extends StatefulWidget {
   /// Called on every change, and with `''` when cleared.
   final ValueChanged<String> onChanged;
 
-  final String initialValue;
+  /// The text to show. The field follows it when the parent changes it, for
+  /// example when a search is reset elsewhere.
+  final String value;
 
   @override
   State<AppSearchField> createState() => _AppSearchFieldState();
 }
 
 class _AppSearchFieldState extends State<AppSearchField> {
-  late final _controller = TextEditingController(text: widget.initialValue);
+  late final _controller = TextEditingController(text: widget.value);
+
+  @override
+  void didUpdateWidget(AppSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only when it differs from what's typed, so typing never moves the
+    // cursor.
+    if (widget.value != oldWidget.value && widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
 
   @override
   void dispose() {

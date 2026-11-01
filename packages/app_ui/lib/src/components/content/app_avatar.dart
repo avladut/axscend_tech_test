@@ -15,13 +15,21 @@ enum AppAvatarSize {
 /// A person's initials in a circle. The colour is picked from the name, so
 /// the same person always gets the same one.
 ///
-/// Decorative: screen readers skip it, because the name is always shown next
-/// to it.
+/// Decorative by default: screen readers skip it, because the name is shown
+/// next to it. Give it a [semanticLabel] when it stands on its own.
 class AppAvatar extends StatelessWidget {
-  const new({required this.name, this.size = AppAvatarSize.md, super.key});
+  const new({
+    required this.name,
+    this.size = AppAvatarSize.md,
+    this.semanticLabel,
+    super.key,
+  });
 
   final String name;
   final AppAvatarSize size;
+
+  /// When set, the avatar is announced as an image with this label.
+  final String? semanticLabel;
 
   /// The first letters of the first and last words, skipping titles such as
   /// "Mrs.". `?` when there are none.
@@ -51,7 +59,7 @@ class AppAvatar extends StatelessWidget {
         ? context.textStyles.headlineSmall
         : context.textStyles.labelLarge;
 
-    return ExcludeSemantics(
+    final avatar = ExcludeSemantics(
       child: CircleAvatar(
         radius: size.diameter / 2,
         backgroundColor: background,
@@ -62,5 +70,9 @@ class AppAvatar extends StatelessWidget {
         ),
       ),
     );
+    final label = semanticLabel;
+    return label == null
+        ? avatar
+        : Semantics(label: label, image: true, child: avatar);
   }
 }

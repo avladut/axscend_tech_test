@@ -8,8 +8,9 @@ enum _Status { loading, empty, error }
 /// What a screen shows instead of its content: loading, nothing found, or
 /// an error with a way to retry.
 class AppStatusView extends StatelessWidget {
-  /// A spinner, with an optional [title] such as "Loading users…".
-  const new loading({this.title, super.key})
+  /// A spinner with a [title] such as "Loading users…", which screen readers
+  /// announce too.
+  const new loading({required String this.title, super.key})
     : _status = _Status.loading,
       message = null,
       actionLabel = null,

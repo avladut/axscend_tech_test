@@ -13,10 +13,12 @@ void main() {
       expect(find.text('Loading…'), findsOneWidget);
     });
 
-    testWidgets('loading works without a title', (tester) async {
-      await tester.pumpApp(const AppStatusView.loading());
+    testWidgets('loading is announced to screen readers', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpApp(const AppStatusView.loading(title: 'Loading…'));
 
-      expect(find.byType(Text), findsNothing);
+      expect(find.bySemanticsLabel('Loading…'), findsOneWidget);
+      semantics.dispose();
     });
 
     testWidgets('empty shows its title and message, with no button', (

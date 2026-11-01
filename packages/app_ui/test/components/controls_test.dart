@@ -89,18 +89,63 @@ void main() {
       expect(find.byTooltip('Clear search'), findsNothing);
     });
 
-    testWidgets('starts with its initial value', (tester) async {
+    testWidgets('starts with its value', (tester) async {
       await tester.pumpApp(
         AppSearchField(
           hint: 'Search',
           clearTooltip: 'Clear',
-          initialValue: 'bret',
+          value: 'bret',
           onChanged: (_) {},
         ),
       );
 
       expect(find.text('bret'), findsOneWidget);
       expect(find.byTooltip('Clear'), findsOneWidget);
+    });
+
+    testWidgets('follows a value changed from outside', (tester) async {
+      Widget field(String value) => AppSearchField(
+        hint: 'Search',
+        clearTooltip: 'Clear',
+        value: value,
+        onChanged: (_) {},
+      );
+
+      await tester.pumpApp(field('bret'));
+      await tester.pumpApp(field(''));
+
+      expect(find.text('bret'), findsNothing);
+      expect(find.byTooltip('Clear'), findsNothing);
+    });
+
+    testWidgets('keeps the cursor when the parent echoes what was typed', (
+      tester,
+    ) async {
+      var value = '';
+      late StateSetter rebuild;
+      await tester.pumpApp(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return AppSearchField(
+              hint: 'Search',
+              clearTooltip: 'Clear',
+              value: value,
+              onChanged: (text) => rebuild(() => value = text),
+            );
+          },
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'leanne');
+      // Move the cursor to the middle, then have the parent echo the text.
+      final field = tester.widget<TextField>(find.byType(TextField));
+      field.controller!.selection = const TextSelection.collapsed(offset: 3);
+      rebuild(() => value = 'leanne');
+      await tester.pump();
+
+      expect(field.controller!.selection.baseOffset, 3);
+      expect(field.controller!.text, 'leanne');
     });
   });
 }

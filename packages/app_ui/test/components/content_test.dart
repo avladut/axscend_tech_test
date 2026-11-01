@@ -79,6 +79,22 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('with a semantic label, is announced as an image', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpApp(
+        const AppAvatar(name: 'Leanne Graham', semanticLabel: 'Leanne Graham'),
+      );
+
+      expect(
+        tester.getSemantics(find.byType(AppAvatar)),
+        matchesSemantics(label: 'Leanne Graham', isImage: true),
+      );
+      expect(find.bySemanticsLabel('LG'), findsNothing);
+      semantics.dispose();
+    });
+
     testWidgets('gives the same name the same colour', (tester) async {
       Color? colourOf(String name) => tester
           .widget<CircleAvatar>(find.byType(CircleAvatar))

@@ -79,7 +79,7 @@ Read them in widgets through `BuildContext`:
 |---|---|
 | `AppListTile` | A row in a list. A tappable row gets a chevron unless it has its own `trailing`; `selected` marks the row open in the detail pane. |
 | `AppCard` | One item that needs a surface: a post, a comment. Tappable with `onTap`. |
-| `AppAvatar` | A person's initials (`sm`, `md`, `lg`). Same name, same colour. Decorative. |
+| `AppAvatar` | A person's initials (`sm`, `md`, `lg`). Same name, same colour. Decorative next to a name; give it a `semanticLabel` when it stands alone. |
 | `AppSectionHeader` | The title of a group, with an optional count tag and action (such as a sort button). |
 | `AppInfoRow` | A labelled value with an icon, such as an email. Tappable with `onTap`. |
 | `AppTag` | A count or status in a pill. The `AppTone` sets the colours. |
@@ -91,7 +91,7 @@ Read them in widgets through `BuildContext`:
 
 | Component | Use it for |
 |---|---|
-| `AppSearchField` | Searching a list. The clear button shows once something is typed. |
+| `AppSearchField` | Searching a list. The clear button shows once something is typed, and the field follows `value` when the app resets it. |
 | `AppChoiceChips<T>` | Picking one filter out of a few, such as All, Done or Pending. |
 | `AppSortButton<T>` | Picking a sort order from a menu, with the current one ticked. |
 
@@ -101,7 +101,7 @@ Both choice controls take `AppChoice(value:, label:)` options.
 
 | Component | Use it for |
 |---|---|
-| `AppStatusView.loading` | While a screen's data loads. |
+| `AppStatusView.loading` | While a screen's data loads. Its `title` ("Loading users…") is required, so screen readers announce it. |
 | `AppStatusView.empty` | Nothing to show, such as no search results. |
 | `AppStatusView.error` | Something went wrong, with an `actionLabel` and `onAction` when trying again could help. |
 
