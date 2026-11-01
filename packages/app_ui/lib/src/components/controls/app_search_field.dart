@@ -60,6 +60,9 @@ class _AppSearchFieldState extends State<AppSearchField> {
     controller: _controller,
     onChanged: widget.onChanged,
     textInputAction: TextInputAction.search,
+    // People search for names, which the keyboard would "correct".
+    autocorrect: false,
+    enableSuggestions: false,
     decoration: InputDecoration(
       hintText: widget.hint,
       prefixIcon: const Icon(Icons.search),
