@@ -7,8 +7,9 @@ A Flutter app (phone and tablet) for browsing the
 posts and comments, albums and photos, and todos. Built for the Axscend
 technical test.
 
-**Status:** project setup only (workspace, packages, CI). Features land one
-pull request at a time.
+**Status:** the app opens on the users list, which you can search, sort and
+pull to refresh. It loads 20 users at a time as you scroll, and keeps at most
+60 in memory. The other screens land one pull request at a time.
 
 ## Requirements
 
@@ -66,7 +67,9 @@ Which package may use which:
 
 - `main` is protected: changes arrive only through pull requests, and two CI
   checks must pass first:
-  - **checks:** formatting and the analyzer, with infos as errors;
+  - **checks:** formatting, the analyzer with infos as errors, and the
+    design-token check: the app's code may not hard-code a colour, text
+    size, spacing or radius, only use [app_ui](packages/app_ui)'s tokens;
   - **tests:** every package's tests, and at least **70% line coverage per
     package** ([tool/coverage_gate](tool/coverage_gate)). The coverage table
     is on each run's summary page.

@@ -1,0 +1,71 @@
+{
+  "@@locale": "en",
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "Button that repeats a request that failed."
+  },
+  "failureOfflineTitle": "You're offline",
+  "failureOfflineMessage": "Check your connection and try again.",
+  "failureNotFoundTitle": "Not found",
+  "failureNotFoundMessage": "It may have been removed.",
+  "failureServerTitle": "The server had a problem",
+  "failureServerMessage": "It answered with error {statusCode}. Try again in a moment.",
+  "@failureServerMessage": {
+    "description": "Shown when the server answers with an error.",
+    "placeholders": {
+      "statusCode": {
+        "type": "int",
+        "example": "500"
+      }
+    }
+  },
+  "failureUnexpectedTitle": "Something didn't look right",
+  "failureUnexpectedMessage": "The server's answer couldn't be read. Try again later.",
+  "notFoundTitle": "Page not found",
+  "notFoundMessage": "This page doesn't exist.",
+  "notFoundAction": "Go to users",
+  "usersTitle": "Users",
+  "usersSearchHint": "Search users",
+  "usersSearchClear": "Clear search",
+  "usersSortTooltip": "Sort users",
+  "usersSortNameAscending": "Name, A to Z",
+  "usersSortNameDescending": "Name, Z to A",
+  "usersSortCompany": "Company",
+  "usersSortCity": "City",
+  "usersAllHeader": "All users",
+  "usersResultsHeader": "Results",
+  "@usersResultsHeader": {
+    "description": "Header above the users that match a search."
+  },
+  "usersTileSubtitle": "@{username} · {company}",
+  "@usersTileSubtitle": {
+    "description": "Second line of a user's row: their username and company.",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "Bret"
+      },
+      "company": {
+        "type": "String",
+        "example": "Romaguera-Crona"
+      }
+    }
+  },
+  "usersLoading": "Loading users…",
+  "usersRowLoading": "Loading user",
+  "@usersRowLoading": {
+    "description": "Read out by screen readers for a row whose user is still loading."
+  },
+  "usersRowFailed": "Couldn't load this user",
+  "usersEmptyTitle": "No users yet",
+  "usersNoMatchTitle": "No users match “{query}”",
+  "@usersNoMatchTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "smith"
+      }
+    }
+  },
+  "usersNoMatchMessage": "Try a name, username, email, company or city."
+}

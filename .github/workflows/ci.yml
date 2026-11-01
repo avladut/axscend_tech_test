@@ -19,7 +19,7 @@ env:
   FLUTTER_VERSION: 3.47.2
 
 jobs:
-  # Format and analyze. Required on main.
+  # Format, analyze and the design-token check. Required on main.
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -46,6 +46,9 @@ jobs:
 
       - name: Analyze
         run: dart run melos run check:analyze
+
+      - name: Design tokens
+        run: dart run melos run check:tokens
 
   # Every package's tests must pass, and each package must cover at least
   # 70% of its lines. Required on main.

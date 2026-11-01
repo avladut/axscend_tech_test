@@ -11,18 +11,33 @@ resolution: workspace
 dependencies:
   app_ui:
     path: ../../packages/app_ui
+  bloc: ^9.2.1
+  bloc_concurrency: ^0.3.0
   cupertino_icons: ^1.0.8
   domain:
     path: ../../packages/domain
+  equatable: ^3.0.0
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_localizations:
+    sdk: flutter
+  get_it: ^9.3.0
+  go_router: ^18.1.2
+  intl: ^0.20.3
   # Only lib/injector.dart may import this package (see docs/adr/0001).
   jsonplaceholder_data:
     path: ../../packages/jsonplaceholder_data
 
 dev_dependencies:
+  bloc_test: ^10.0.0
+  build_runner: ^2.16.1
   flutter_test:
     sdk: flutter
+  go_router_builder: ^4.5.3
+  mocktail: ^1.0.5
 
 flutter:
+  # Builds the translations from lib/l10n/arb (see l10n.yaml).
+  generate: true
   uses-material-design: true
