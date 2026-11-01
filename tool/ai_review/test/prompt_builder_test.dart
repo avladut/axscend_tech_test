@@ -78,6 +78,19 @@ void main() {
       expect(prompt, isNot(contains('<<<FILE lib/a.dart')));
     });
 
+    test("rejects a part the selection doesn't have", () {
+      final rejected = throwsA(
+        isA<RangeError>().having((error) => error.name, 'name', 'part'),
+      );
+
+      expect(() => builder.user(selection: selection, part: 2), rejected);
+      expect(() => builder.user(selection: selection, part: -1), rejected);
+      expect(
+        () => builder.user(selection: DiffSelection(files: []), part: 1),
+        rejected,
+      );
+    });
+
     test('says nothing about parts for a small PR', () {
       final prompt = builder.user(
         selection: DiffSelection(files: [addedFile('lib/a.dart')]),

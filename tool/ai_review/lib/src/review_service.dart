@@ -148,7 +148,9 @@ class ReviewService {
     final parts = selection.batches;
     final answers = <ParsedReview>[];
     final unanswered = <String>[];
-    String? failure;
+    // Each distinct failure once, in order: the same outage in every part is
+    // reported once.
+    final failures = <String>{};
     int? promptTokens = 0;
     int? completionTokens = 0;
     final stopwatch = Stopwatch()..start();
@@ -176,7 +178,7 @@ class ReviewService {
         completionTokens = _add(completionTokens, reply.completionTokens);
       } on ReviewModelException catch (error) {
         _log('Model unavailable for part ${index + 1}: ${error.message}');
-        failure = error.message;
+        failures.add(error.message);
         unanswered.addAll(part.map((file) => file.path));
       }
     }
@@ -184,7 +186,7 @@ class ReviewService {
 
     if (answers.isEmpty) {
       await _publisher.publishUnavailable(
-        reason: failure ?? 'no answer',
+        reason: failures.isEmpty ? 'no answer' : failures.join('; '),
         model: _model.name,
       );
       return ReviewOutcome.modelUnavailable;

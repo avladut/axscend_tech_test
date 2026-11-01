@@ -28,6 +28,9 @@ class PromptBuilder {
   /// The prompt for [part] of [selection] (the first one by default). The
   /// file list always shows the whole review, so the model knows what else
   /// changed.
+  ///
+  /// Throws a [RangeError] named `part` when [part] isn't one of the
+  /// selection's parts. An empty selection has only part 0.
   String user({
     required DiffSelection selection,
     PullRequestInfo? pullRequest,
@@ -35,6 +38,12 @@ class PromptBuilder {
     int part = 0,
   }) {
     final parts = selection.batches;
+    RangeError.checkValueInInterval(
+      part,
+      0,
+      parts.isEmpty ? 0 : parts.length - 1,
+      'part',
+    );
     final shown = parts.isEmpty ? const <FileDiff>[] : parts[part];
     final inPart = {for (final file in shown) file.path};
     final out = StringBuffer()

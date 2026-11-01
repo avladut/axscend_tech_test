@@ -274,6 +274,21 @@ void main() {
         expect(publisher.unavailableReason, 'timed out');
         expect(publisher.report, isNull);
       });
+
+      test('names each different failure when every part fails', () async {
+        await service(
+          files: twoFiles,
+          filter: smallParts,
+          withModel: FakeModel(
+            answers: [
+              const ReviewModelException('timed out'),
+              const ReviewModelException('HTTP 502'),
+            ],
+          ),
+        ).run(base: 'main', head: 'HEAD');
+
+        expect(publisher.unavailableReason, 'timed out; HTTP 502');
+      });
     });
 
     test('passes the PR text to the prompt', () async {
