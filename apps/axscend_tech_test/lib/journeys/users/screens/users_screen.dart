@@ -1,4 +1,5 @@
 import 'package:app_ui/app_ui.dart';
+import 'package:axscend_tech_test/app/router/routes.dart';
 import 'package:axscend_tech_test/common/paging/paged_window.dart';
 import 'package:axscend_tech_test/common/widgets/data_failure_view.dart';
 import 'package:axscend_tech_test/injector.dart';
@@ -111,7 +112,11 @@ class _UsersContent extends StatelessWidget {
                       itemCount: count,
                       itemBuilder: (context, index) {
                         if (window.itemAt(index) case final user?) {
-                          return UserTile(user: user);
+                          return UserTile(
+                            user: user,
+                            onTap: () =>
+                                UserAlbumsRoute(userId: user.id).go(context),
+                          );
                         }
                         final page = window.pageOf(index);
                         void request() => bloc.add(UsersPageRequested(page));

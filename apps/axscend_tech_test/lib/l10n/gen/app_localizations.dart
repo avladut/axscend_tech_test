@@ -267,6 +267,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try a name, username, email, company or city.'**
   String get usersNoMatchMessage;
+
+  /// No description provided for @albumsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get albumsTitle;
+
+  /// No description provided for @albumsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading albums…'**
+  String get albumsLoading;
+
+  /// No description provided for @albumsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No albums yet'**
+  String get albumsEmptyTitle;
+
+  /// No description provided for @photosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photosTitle;
+
+  /// No description provided for @photosLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading photos…'**
+  String get photosLoading;
+
+  /// No description provided for @photosEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos in this album'**
+  String get photosEmptyTitle;
+
+  /// No description provided for @photoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get photoTitle;
+
+  /// No description provided for @photoLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading photo…'**
+  String get photoLoading;
 }
 
 class _AppLocalizationsDelegate

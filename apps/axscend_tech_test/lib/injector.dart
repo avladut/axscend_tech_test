@@ -1,3 +1,4 @@
+import 'package:axscend_tech_test/journeys/albums/albums_injector.dart';
 import 'package:axscend_tech_test/journeys/users/users_injector.dart';
 import 'package:domain/domain.dart';
 import 'package:get_it/get_it.dart';
@@ -29,4 +30,5 @@ void configureDependencies() {
       () => getIt<JsonPlaceholderBackend>().todos,
     );
   UsersInjector.init();
+  AlbumsInjector.init();
 }
