@@ -451,5 +451,13 @@ void main() {
 
       expect(find.text('100%'), findsOneWidget);
     });
+
+    testWidgets('shows 0% for 0 of 0, not a full ring', (tester) async {
+      await tester.pumpApp(
+        const AppProgressRing(value: 0 / 0, semanticLabel: 'Todos done'),
+      );
+
+      expect(find.text('0%'), findsOneWidget);
+    });
   });
 }

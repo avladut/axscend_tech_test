@@ -116,8 +116,7 @@ class _UsersContent extends StatelessWidget {
                       if (window.itemAt(index) case final user?) {
                         return UserTile(
                           user: user,
-                          onTap: () =>
-                              UserAlbumsRoute(userId: user.id).go(context),
+                          onTap: () => UserRoute(userId: user.id).go(context),
                         );
                       }
                       final page = window.pageOf(index);

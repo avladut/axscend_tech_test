@@ -2,6 +2,10 @@ import 'package:axscend_tech_test/injector.dart';
 import 'package:axscend_tech_test/journeys/albums/blocs/album_photos_bloc.dart';
 import 'package:axscend_tech_test/journeys/albums/blocs/photo_bloc.dart';
 import 'package:axscend_tech_test/journeys/albums/blocs/user_albums_bloc.dart';
+import 'package:axscend_tech_test/journeys/posts/blocs/post_bloc.dart';
+import 'package:axscend_tech_test/journeys/posts/blocs/user_posts_bloc.dart';
+import 'package:axscend_tech_test/journeys/todos/blocs/user_todos_bloc.dart';
+import 'package:axscend_tech_test/journeys/users/blocs/user_profile_bloc.dart';
 import 'package:axscend_tech_test/journeys/users/blocs/users_bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +46,24 @@ void main() {
         userAlbums.close(),
         albumPhotos.close(),
         photo.close(),
+      ]);
+    });
+
+    test('makes the profile, posts and todos blocs for their ids', () async {
+      final profile = getIt<UserProfileBloc>(param1: 7);
+      final posts = getIt<UserPostsBloc>(param1: 7);
+      final post = getIt<PostBloc>(param1: (userId: 7, postId: 3));
+      final todos = getIt<UserTodosBloc>(param1: 7);
+
+      expect(profile.userId, 7);
+      expect(posts.userId, 7);
+      expect(post.address, (userId: 7, postId: 3));
+      expect(todos.userId, 7);
+      await Future.wait([
+        profile.close(),
+        posts.close(),
+        post.close(),
+        todos.close(),
       ]);
     });
   });

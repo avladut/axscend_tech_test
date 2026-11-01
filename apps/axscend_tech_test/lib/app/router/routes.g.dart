@@ -14,21 +14,45 @@ RouteBase get $usersRoute => GoRouteData.$route(
   factory: $UsersRoute._fromState,
   routes: [
     GoRouteData.$route(
-      path: ':userId/albums',
+      path: ':userId',
       hasOverriddenOnExit: false,
-      factory: $UserAlbumsRoute._fromState,
+      factory: $UserRoute._fromState,
       routes: [
         GoRouteData.$route(
-          path: ':albumId',
+          path: 'albums',
           hasOverriddenOnExit: false,
-          factory: $AlbumPhotosRoute._fromState,
+          factory: $UserAlbumsRoute._fromState,
           routes: [
             GoRouteData.$route(
-              path: 'photos/:photoId',
+              path: ':albumId',
               hasOverriddenOnExit: false,
-              factory: $PhotoRoute._fromState,
+              factory: $AlbumPhotosRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'photos/:photoId',
+                  hasOverriddenOnExit: false,
+                  factory: $PhotoRoute._fromState,
+                ),
+              ],
             ),
           ],
+        ),
+        GoRouteData.$route(
+          path: 'posts',
+          hasOverriddenOnExit: false,
+          factory: $UserPostsRoute._fromState,
+          routes: [
+            GoRouteData.$route(
+              path: ':postId',
+              hasOverriddenOnExit: false,
+              factory: $PostRoute._fromState,
+            ),
+          ],
+        ),
+        GoRouteData.$route(
+          path: 'todos',
+          hasOverriddenOnExit: false,
+          factory: $UserTodosRoute._fromState,
         ),
       ],
     ),
@@ -40,6 +64,31 @@ mixin $UsersRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/users');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $UserRoute on GoRouteData {
+  static UserRoute _fromState(GoRouterState state) =>
+      UserRoute(userId: int.parse(state.pathParameters['userId']!));
+
+  UserRoute get _self => this as UserRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/users/${Uri.encodeComponent(_self.userId.toString())}',
+  );
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -119,6 +168,83 @@ mixin $PhotoRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/users/${Uri.encodeComponent(_self.userId.toString())}/albums/${Uri.encodeComponent(_self.albumId.toString())}/photos/${Uri.encodeComponent(_self.photoId.toString())}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $UserPostsRoute on GoRouteData {
+  static UserPostsRoute _fromState(GoRouterState state) =>
+      UserPostsRoute(userId: int.parse(state.pathParameters['userId']!));
+
+  UserPostsRoute get _self => this as UserPostsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/users/${Uri.encodeComponent(_self.userId.toString())}/posts',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $PostRoute on GoRouteData {
+  static PostRoute _fromState(GoRouterState state) => PostRoute(
+    userId: int.parse(state.pathParameters['userId']!),
+    postId: int.parse(state.pathParameters['postId']!),
+  );
+
+  PostRoute get _self => this as PostRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/users/${Uri.encodeComponent(_self.userId.toString())}/posts/${Uri.encodeComponent(_self.postId.toString())}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $UserTodosRoute on GoRouteData {
+  static UserTodosRoute _fromState(GoRouterState state) =>
+      UserTodosRoute(userId: int.parse(state.pathParameters['userId']!));
+
+  UserTodosRoute get _self => this as UserTodosRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/users/${Uri.encodeComponent(_self.userId.toString())}/todos',
   );
 
   @override

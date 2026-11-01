@@ -9,7 +9,16 @@ import 'package:axscend_tech_test/journeys/albums/models/album_addresses.dart';
 import 'package:axscend_tech_test/journeys/albums/screens/album_photos_screen.dart';
 import 'package:axscend_tech_test/journeys/albums/screens/photo_screen.dart';
 import 'package:axscend_tech_test/journeys/albums/screens/user_albums_screen.dart';
+import 'package:axscend_tech_test/journeys/posts/blocs/post_bloc.dart';
+import 'package:axscend_tech_test/journeys/posts/blocs/user_posts_bloc.dart';
+import 'package:axscend_tech_test/journeys/posts/models/post_models.dart';
+import 'package:axscend_tech_test/journeys/posts/screens/post_screen.dart';
+import 'package:axscend_tech_test/journeys/posts/screens/user_posts_screen.dart';
+import 'package:axscend_tech_test/journeys/todos/blocs/user_todos_bloc.dart';
+import 'package:axscend_tech_test/journeys/todos/screens/user_todos_screen.dart';
+import 'package:axscend_tech_test/journeys/users/blocs/user_profile_bloc.dart';
 import 'package:axscend_tech_test/journeys/users/blocs/users_bloc.dart';
+import 'package:axscend_tech_test/journeys/users/screens/user_profile_screen.dart';
 import 'package:axscend_tech_test/journeys/users/screens/users_screen.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/albums.dart';
+import '../../helpers/posts_todos.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/users.dart';
 
@@ -37,9 +47,11 @@ void main() {
     // and no picture needs the network.
     const failed = LoadStatus.failure;
     final addresses = <Object>[];
+    final profiles = <int>[];
 
     setUp(() {
       addresses.clear();
+      profiles.clear();
       final users = MockUsersBloc();
       when(() => users.state).thenReturn(
         UsersState(status: UsersStatus.success, window: windowOf(const [])),
@@ -56,8 +68,40 @@ void main() {
       when(
         () => photo.state,
       ).thenReturn(const LoadState(status: failed, failure: OfflineFailure()));
+      final profile = MockUserProfileBloc();
+      when(
+        () => profile.state,
+      ).thenReturn(const LoadState(status: failed, failure: OfflineFailure()));
+      final userPosts = MockUserPostsBloc();
+      when(
+        () => userPosts.state,
+      ).thenReturn(const LoadState(status: failed, failure: OfflineFailure()));
+      final post = MockPostBloc();
+      when(
+        () => post.state,
+      ).thenReturn(const LoadState(status: failed, failure: OfflineFailure()));
+      final userTodos = MockUserTodosBloc();
+      when(
+        () => userTodos.state,
+      ).thenReturn(const LoadState(status: failed, failure: OfflineFailure()));
       getIt
         ..registerFactory<UsersBloc>(() => users)
+        ..registerFactoryParam<UserProfileBloc, int, void>((userId, _) {
+          profiles.add(userId);
+          return profile;
+        })
+        ..registerFactoryParam<UserPostsBloc, int, void>((userId, _) {
+          addresses.add(('posts', userId));
+          return userPosts;
+        })
+        ..registerFactoryParam<PostBloc, PostAddress, void>((address, _) {
+          addresses.add(address);
+          return post;
+        })
+        ..registerFactoryParam<UserTodosBloc, int, void>((userId, _) {
+          addresses.add(('todos', userId));
+          return userTodos;
+        })
         ..registerFactoryParam<UserAlbumsBloc, int, void>((userId, _) {
           addresses.add(userId);
           return userAlbums;
@@ -89,7 +133,7 @@ void main() {
       expect(find.byType(UsersScreen), findsOneWidget);
     });
 
-    testWidgets("a link opens a user's albums, above the users", (
+    testWidgets("a link opens a user's albums, above their profile", (
       tester,
     ) async {
       await open(tester, '/users/7/albums');
@@ -97,6 +141,10 @@ void main() {
       expect(find.byType(UserAlbumsScreen), findsOneWidget);
       expect(addresses, [7]);
       expect(find.byType(UsersScreen, skipOffstage: false), findsOneWidget);
+      expect(
+        find.byType(UserProfileScreen, skipOffstage: false),
+        findsOneWidget,
+      );
     });
 
     testWidgets("a link opens an album's photos", (tester) async {
@@ -151,7 +199,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(UserAlbumsScreen), findsNothing);
-      expect(find.byType(UsersScreen), findsOneWidget);
+      expect(find.byType(UserProfileScreen), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a new page slides in rather than appearing at once', (
@@ -169,6 +217,32 @@ void main() {
       expect(find.byType(UsersScreen), findsOneWidget);
       expect(find.byType(UserAlbumsScreen), findsOneWidget);
       await tester.pumpAndSettle();
+    });
+
+    testWidgets("a link opens a user's profile", (tester) async {
+      await open(tester, '/users/7');
+
+      expect(find.byType(UserProfileScreen), findsOneWidget);
+      expect(profiles, [7]);
+    });
+
+    testWidgets("a link opens a user's posts, and one post", (tester) async {
+      await open(tester, '/users/7/posts');
+      expect(find.byType(UserPostsScreen), findsOneWidget);
+
+      await open(tester, '/users/7/posts/3');
+      expect(find.byType(PostScreen), findsOneWidget);
+      expect(
+        addresses,
+        containsAllInOrder(<Object>[('posts', 7), (userId: 7, postId: 3)]),
+      );
+    });
+
+    testWidgets("a link opens a user's todos", (tester) async {
+      await open(tester, '/users/7/todos');
+
+      expect(find.byType(UserTodosScreen), findsOneWidget);
+      expect(addresses, contains(('todos', 7)));
     });
 
     testWidgets('an id that is not a number is "page not found"', (

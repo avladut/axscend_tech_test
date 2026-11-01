@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 class AppProgressRing extends StatelessWidget {
   const new({required this.value, required this.semanticLabel, super.key});
 
-  /// From 0 to 1. Values outside are clamped.
+  /// From 0 to 1. Values outside are clamped, and a value that isn't a
+  /// number (such as 0 of 0 done) counts as 0.
   final double value;
 
   /// What is being measured, such as "Todos done", for screen readers.
@@ -14,7 +15,8 @@ class AppProgressRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clamped = value.clamp(0.0, 1.0);
+    // clamp alone would turn NaN into 1.0, a full ring.
+    final clamped = value.isNaN ? 0.0 : value.clamp(0.0, 1.0);
     final percent = '${(clamped * 100).round()}%';
     return Semantics(
       label: semanticLabel,
