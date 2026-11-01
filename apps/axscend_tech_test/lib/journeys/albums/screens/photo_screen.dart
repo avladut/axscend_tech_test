@@ -38,6 +38,8 @@ class PhotoView extends StatelessWidget {
         loadingTitle: l10n.photoLoading,
         onRetry: () => bloc.add(const LoadRequested(refresh: true)),
         // The photo shrinks to fit the screen, so the title always shows.
+        // The square box keeps the layout still while it loads; contain
+        // shows the whole photo, whatever its shape.
         builder: (context, photo) => AppPage(
           child: Column(
             children: [
@@ -47,6 +49,7 @@ class PhotoView extends StatelessWidget {
                   child: AppNetworkImage(
                     url: photo.url,
                     semanticLabel: photo.title,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

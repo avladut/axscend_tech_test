@@ -249,6 +249,7 @@ void main() {
       );
       expect(image.url, photo.url);
       expect(image.semanticLabel, 'A beach');
+      expect(image.fit, BoxFit.contain, reason: 'never crops the photo');
     });
   });
 }
